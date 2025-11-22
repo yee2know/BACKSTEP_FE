@@ -76,6 +76,11 @@ export default function ProfilePage() {
     []
   );
 
+  const displayName =
+    user?.nickname?.trim() || user?.name?.trim() || "Cistus User";
+  const displayInitial =
+    (user?.nickname?.trim() || user?.name?.trim() || "U").charAt(0);
+
   return (
     <div className="h-screen overflow-y-scroll snap-y snap-mandatory bg-white text-zinc-900">
       {/* Navigation Bar */}
@@ -101,7 +106,7 @@ export default function ProfilePage() {
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-zinc-100 text-4xl font-bold text-zinc-300">
-                      {user?.name?.charAt(0) ?? "U"}
+                      {displayInitial}
                     </div>
                   )}
                 </div>
@@ -109,7 +114,7 @@ export default function ProfilePage() {
                 {/* User Identity */}
                 <div className="mb-2 flex flex-col gap-1 text-center lg:text-left">
                   <h1 className="text-3xl font-extrabold text-zinc-900">
-                    {isLoading ? "사용자 정보를 불러오는 중..." : user?.name ?? "Cistus User"}
+                    {isLoading ? "사용자 정보를 불러오는 중..." : displayName}
                   </h1>
                   <p className="font-medium text-zinc-400">
                     {isLoading ? "loading@example.com" : user?.email ?? "user@example.com"}
