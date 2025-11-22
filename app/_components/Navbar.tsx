@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiResponse } from "../../lib/api";
 
 type NavbarProps = {
@@ -39,6 +39,7 @@ export function Navbar({
   const [balance, setBalance] = useState<number | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileInitial, setProfileInitial] = useState("U");
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Use props if available, otherwise internal state
   const searchType = propSearchType || internalSearchType;
@@ -82,6 +83,23 @@ export function Navbar({
     };
     fetchUser();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isProfileOpen &&
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isProfileOpen]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,7 +206,7 @@ export function Navbar({
       </div>
 
       {/* Right: Profile */}
-      <div className="relative flex items-center gap-4">
+      <div className="relative flex items-center gap-4" ref={profileMenuRef}>
         <button
           onClick={() => setIsProfileOpen(!isProfileOpen)}
           className="h-8 w-8 overflow-hidden rounded-full bg-zinc-200 transition-all hover:ring-2 hover:ring-orange-500 focus:outline-none"
