@@ -93,7 +93,7 @@ export default function PostDetailPage() {
           const isFree = data.is_free === "true" || data.is_free === true;
           const visibility = isFree
             ? "free"
-            : data.sale_status === "SALE"
+            : data.sale_status === "ONSALE"
             ? "paid"
             : "private";
 
@@ -138,10 +138,21 @@ export default function PostDetailPage() {
         `${post.price.toLocaleString()} 포인트를 사용하여 열람하시겠습니까?`
       )
     ) {
-      // TODO: Call backend API to deduct points and verify purchase
-      // await api.purchasePost(id);
-      alert("구매가 완료되었습니다.");
-      setIsUnlocked(true);
+      try {
+        const response = await api.post(`/users/projects/${id}/purchase`, {
+          price: post.price,
+        });
+
+        if (response.success) {
+          alert("구매가 완료되었습니다.");
+          setIsUnlocked(true);
+        } else {
+          alert(response.message || "구매에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("Purchase failed", error);
+        alert("구매 처리 중 오류가 발생했습니다.");
+      }
     }
   };
 

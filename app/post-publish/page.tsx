@@ -54,17 +54,17 @@ export default function PostPublishPage() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (isTagDropdownOpen && !target.closest('.tag-dropdown-container')) {
+      if (isTagDropdownOpen && !target.closest(".tag-dropdown-container")) {
         setIsTagDropdownOpen(false);
       }
     };
 
     if (isTagDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isTagDropdownOpen]);
 
@@ -181,13 +181,34 @@ export default function PostPublishPage() {
   };
 
   const handlePublish = async () => {
+    // Validation
+    if (post.visibility !== "private" && !post.resultLink.trim()) {
+      alert("무료/유료 공개 시 결과물 링크는 필수입니다.");
+      return;
+    }
+
+    if (
+      post.resultLink.trim() &&
+      !/^https?:\/\//.test(post.resultLink.trim())
+    ) {
+      alert(
+        "링크는 'http://' 또는 'https://'로 시작하는 전체 URL이어야 합니다."
+      );
+      return;
+    }
+
     const body = {
       name: post.title,
       period: post.duration,
       personnel: post.teamSize,
       intent: post.goal,
       my_role: post.role,
-      sale_status: post.visibility === "paid" ? "SALE" : "NOTSALE",
+      sale_status:
+        post.visibility === "paid"
+          ? "ONSALE"
+          : post.visibility === "free"
+          ? "FREE"
+          : "NOTSALE",
       is_free: post.visibility === "free",
       price: post.price,
       result_url: post.resultLink,
@@ -471,10 +492,9 @@ export default function PostPublishPage() {
                     onChange={(e) =>
                       handleInputChange("resultLink", e.target.value)
                     }
-                    disabled={post.visibility === "private"}
                     placeholder={
                       post.visibility === "private"
-                        ? "비공개 설정 시 링크를 입력할 수 없습니다"
+                        ? "결과물 링크 (선택사항)"
                         : "결과물 링크 (https://...)"
                     }
                     className="w-full bg-transparent text-sm font-medium text-zinc-900 placeholder:text-zinc-300 focus:outline-none disabled:cursor-not-allowed disabled:text-zinc-400"
@@ -525,7 +545,9 @@ export default function PostPublishPage() {
                 >
                   <span>태그 추가</span>
                   <ChevronDownIcon
-                    className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${isTagDropdownOpen ? "rotate-180" : ""}`}
+                    className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${
+                      isTagDropdownOpen ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
 
@@ -533,21 +555,21 @@ export default function PostPublishPage() {
                   <div className="absolute left-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-zinc-100 bg-white p-1 shadow-lg ring-1 ring-black/5 z-10">
                     {AVAILABLE_TAGS.filter((tag) => !post.tags.includes(tag))
                       .length > 0 ? (
-                      AVAILABLE_TAGS.filter((tag) => !post.tags.includes(tag)).map(
-                        (tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => {
-                              addTag(tag);
-                              setIsTagDropdownOpen(false);
-                            }}
-                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
-                          >
-                            {tag}
-                          </button>
-                        )
-                      )
+                      AVAILABLE_TAGS.filter(
+                        (tag) => !post.tags.includes(tag)
+                      ).map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            addTag(tag);
+                            setIsTagDropdownOpen(false);
+                          }}
+                          className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
+                        >
+                          {tag}
+                        </button>
+                      ))
                     ) : (
                       <div className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-400">
                         추가할 태그가 없습니다

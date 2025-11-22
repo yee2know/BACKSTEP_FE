@@ -93,7 +93,7 @@ export default function PostEditPage() {
           const isFree = data.is_free === "true" || data.is_free === true;
           const visibility = isFree
             ? "free"
-            : data.sale_status === "SALE"
+            : data.sale_status === "ONSALE"
             ? "paid"
             : "private";
 
@@ -272,6 +272,22 @@ export default function PostEditPage() {
       return;
     }
 
+    // Validation
+    if (post.visibility !== "private" && !post.resultLink.trim()) {
+      alert("무료/유료 공개 시 결과물 링크는 필수입니다.");
+      return;
+    }
+
+    if (
+      post.resultLink.trim() &&
+      !/^https?:\/\//.test(post.resultLink.trim())
+    ) {
+      alert(
+        "링크는 'http://' 또는 'https://'로 시작하는 전체 URL이어야 합니다."
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -280,7 +296,12 @@ export default function PostEditPage() {
         personnel: post.teamSize,
         intent: post.goal,
         my_role: post.role,
-        sale_status: post.visibility === "paid" ? "SALE" : "NOTSALE",
+        sale_status:
+          post.visibility === "paid"
+            ? "ONSALE"
+            : post.visibility === "free"
+            ? "FREE"
+            : "NOTSALE",
         is_free: post.visibility === "free",
         price: post.price,
         result_url: post.resultLink,
@@ -563,10 +584,9 @@ export default function PostEditPage() {
                     onChange={(e) =>
                       handleInputChange("resultLink", e.target.value)
                     }
-                    disabled={post.visibility === "private"}
                     placeholder={
                       post.visibility === "private"
-                        ? "비공개 설정 시 링크를 입력할 수 없습니다"
+                        ? "결과물 링크 (선택사항)"
                         : "결과물 링크 (https://...)"
                     }
                     className="w-full bg-transparent text-sm font-medium text-zinc-900 placeholder:text-zinc-300 focus:outline-none disabled:cursor-not-allowed disabled:text-zinc-400"
