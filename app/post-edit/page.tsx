@@ -8,6 +8,8 @@ import {
   XIcon,
   SparklesIcon,
   PlusIcon,
+  LinkIcon,
+  ImageIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -15,6 +17,7 @@ export default function PostEditPage() {
   // State for the post being edited
   const [post, setPost] = useState({
     title: "Cistus Project",
+    thumbnail: null as string | null,
     duration: "2024.01.15 - 2024.03.20",
     likes: 128, // Likes are usually not editable by the user directly in this context, but kept for structure
     author: "Kim Developer",
@@ -22,6 +25,7 @@ export default function PostEditPage() {
     tags: ["Communication", "React", "Schedule Management"],
     visibility: "free", // private, free, paid
     price: 0,
+    resultLink: "", // Link to the final output
     goal: "To build a platform where developers can share their failures and learn from each other, turning setbacks into assets.",
     failures: [
       {
@@ -88,22 +92,7 @@ export default function PostEditPage() {
   const handleFailureChange = (index: number, field: string, value: string) => {
     const newFailures = [...post.failures];
     newFailures[index] = { ...newFailures[index], [field]: value };
-
-    // If tag changes, update question automatically
-    if (field === "tag") {
-      newFailures[index].question = value
-        ? `${value} 관련 가장 큰 어려움은 무엇이었나요?`
-        : "";
-    }
-
     setPost((prev) => ({ ...prev, failures: newFailures }));
-  };
-
-  const addFailure = () => {
-    setPost((prev) => ({
-      ...prev,
-      failures: [...prev.failures, { tag: "", question: "", answer: "" }],
-    }));
   };
 
   const removeFailure = (index: number) => {
@@ -115,7 +104,18 @@ export default function PostEditPage() {
 
   const addTag = (tag: string) => {
     if (tag && !post.tags.includes(tag)) {
-      setPost((prev) => ({ ...prev, tags: [...prev.tags, tag] }));
+      setPost((prev) => ({
+        ...prev,
+        tags: [...prev.tags, tag],
+        failures: [
+          ...prev.failures,
+          {
+            tag: tag,
+            question: `${tag} 관련 가장 큰 어려움은 무엇이었나요?`,
+            answer: "",
+          },
+        ],
+      }));
       setNewTag("");
     }
   };
@@ -124,6 +124,7 @@ export default function PostEditPage() {
     setPost((prev) => ({
       ...prev,
       tags: prev.tags.filter((tag) => tag !== tagToRemove),
+      failures: prev.failures.filter((f) => f.tag !== tagToRemove),
     }));
   };
 
@@ -254,6 +255,41 @@ export default function PostEditPage() {
       <main className="mx-auto max-w-3xl px-6 pt-24 pb-20">
         {/* Header Section */}
         <header className="mb-16 mx-auto max-w-4xl">
+          {/* 0. Thumbnail Upload */}
+          <div className="mb-8">
+            <div className="group relative flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 transition-all hover:border-orange-500 hover:bg-orange-50">
+              <input
+                type="file"
+                accept="image/*"
+                className="absolute inset-0 z-10 cursor-pointer opacity-0"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      handleInputChange("thumbnail", reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+              {post.thumbnail ? (
+                <img
+                  src={post.thumbnail}
+                  alt="Thumbnail"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-zinc-400 transition-colors group-hover:text-orange-500">
+                  <ImageIcon className="h-12 w-12" />
+                  <span className="text-sm font-bold">
+                    대표 사진을 업로드하세요
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* 1. Title */}
           <div className="mb-8">
             <input
@@ -364,6 +400,32 @@ export default function PostEditPage() {
                   <span className="text-sm font-bold text-zinc-500">원</span>
                 </div>
               )}
+
+              {/* Result Link Input */}
+              <div className="mt-2 flex w-full flex-col items-end gap-1">
+                <div className="flex w-full items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-zinc-100 transition-all focus-within:ring-orange-500">
+                  <LinkIcon className="h-4 w-4 text-zinc-400" />
+                  <input
+                    type="text"
+                    value={post.resultLink}
+                    onChange={(e) =>
+                      handleInputChange("resultLink", e.target.value)
+                    }
+                    disabled={post.visibility === "private"}
+                    placeholder={
+                      post.visibility === "private"
+                        ? "비공개 설정 시 링크를 입력할 수 없습니다"
+                        : "결과물 링크 (https://...)"
+                    }
+                    className="w-full bg-transparent text-sm font-medium text-zinc-900 placeholder:text-zinc-300 focus:outline-none disabled:cursor-not-allowed disabled:text-zinc-400"
+                  />
+                </div>
+                {post.visibility === "paid" && (
+                  <span className="text-xs font-bold text-orange-500">
+                    * 구매자에게만 공개됩니다
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -442,12 +504,6 @@ export default function PostEditPage() {
               <h2 className="text-xl font-bold text-orange-500">
                 2. 실패 경험 (태그별 회고)
               </h2>
-              <button
-                onClick={addFailure}
-                className="rounded-lg bg-orange-100 px-3 py-1.5 text-sm font-bold text-orange-600 hover:bg-orange-200"
-              >
-                + 질문 추가
-              </button>
             </div>
             <div className="space-y-8">
               {post.failures.map((failure, index) => (
@@ -455,32 +511,14 @@ export default function PostEditPage() {
                   key={index}
                   className="relative rounded-xl border border-zinc-100 bg-zinc-50 p-6"
                 >
-                  <button
-                    onClick={() => removeFailure(index)}
-                    className="absolute right-4 top-4 text-zinc-400 hover:text-red-500"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-
-                  {/* Tag Selection for Failure */}
+                  {/* Tag Selection for Failure (Read-only) */}
                   <div className="mb-4">
                     <label className="mb-1 block text-xs font-bold text-zinc-500">
                       관련 태그
                     </label>
-                    <select
-                      value={failure.tag}
-                      onChange={(e) =>
-                        handleFailureChange(index, "tag", e.target.value)
-                      }
-                      className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-                    >
-                      <option value="">태그 선택</option>
-                      {post.tags.map((tag) => (
-                        <option key={tag} value={tag}>
-                          {tag}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-sm font-bold text-zinc-700">
+                      {failure.tag}
+                    </div>
                   </div>
 
                   {/* Question */}
