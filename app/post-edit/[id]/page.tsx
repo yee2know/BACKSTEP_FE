@@ -116,12 +116,8 @@ export default function PostEditPage() {
             }
           );
 
-          const isFree = data.is_free === "true" || data.is_free === true;
-          const visibility = isFree
-            ? "free"
-            : data.sale_status === "ONSALE"
-            ? "paid"
-            : "private";
+          const isPrivate = data.sale_status === "NOTSALE";
+          const visibility = isPrivate ? "private" : "public";
 
           setPost({
             title: data.name,
@@ -179,8 +175,7 @@ export default function PostEditPage() {
 
   const visibilityOptions = [
     { id: "private", label: "비공개" },
-    { id: "free", label: "무료공개" },
-    { id: "paid", label: "유료공개" },
+    { id: "public", label: "공개" },
   ];
 
   // Handlers
@@ -312,6 +307,8 @@ export default function PostEditPage() {
       return;
     }
 
+    const isPublic = post.visibility === "public";
+
     setSaving(true);
     try {
       const payload = {
@@ -321,13 +318,8 @@ export default function PostEditPage() {
         personnel: post.teamSize,
         intent: post.goal,
         my_role: post.role,
-        sale_status:
-          post.visibility === "paid"
-            ? "ONSALE"
-            : post.visibility === "free"
-            ? "FREE"
-            : "NOTSALE",
-        is_free: post.visibility === "free",
+        sale_status: !isPublic ? "NOTSALE" : "ONSALE",
+        is_free: false,
         price: post.price,
         result_url: post.resultLink,
         failure_category: post.tags,
@@ -498,71 +490,52 @@ export default function PostEditPage() {
 
             {/* Right: Visibility */}
             <div className="flex flex-col items-end gap-3">
-              <div className="flex rounded-lg bg-white p-1 shadow-sm ring-1 ring-zinc-100">
+              <div className="flex rounded-lg bg-zinc-100 p-1 shadow-sm ring-1 ring-zinc-200 opacity-70 cursor-not-allowed">
                 {visibilityOptions.map((option) => (
                   <button
                     key={option.id}
-                    onClick={() => handleInputChange("visibility", option.id)}
-                    className={`relative px-4 py-1.5 text-sm font-bold rounded-md transition-all ${
+                    disabled
+                    className={`relative px-4 py-1.5 text-sm font-bold rounded-md transition-all cursor-not-allowed ${
                       post.visibility === option.id
-                        ? "text-white"
-                        : "text-zinc-400 hover:text-zinc-600"
+                        ? "text-white bg-zinc-500"
+                        : "text-zinc-400"
                     }`}
                   >
-                    {post.visibility === option.id && (
-                      <motion.div
-                        layoutId="visibility-indicator"
-                        className="absolute inset-0 rounded-md bg-zinc-900"
-                        transition={{
-                          type: "spring",
-                          bounce: 0.2,
-                          duration: 0.6,
-                        }}
-                      />
-                    )}
                     <span className="relative z-10">{option.label}</span>
                   </button>
                 ))}
               </div>
-              {post.visibility === "paid" && (
-                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+              {post.visibility === "public" && (
+                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1 opacity-70">
                   <input
                     type="number"
                     value={post.price}
-                    onChange={(e) =>
-                      handleInputChange("price", parseInt(e.target.value) || 0)
-                    }
-                    placeholder="0"
-                    className="w-20 border-b border-zinc-300 bg-transparent text-right font-bold text-zinc-900 focus:border-orange-500 focus:outline-none"
+                    disabled
+                    className="w-20 border-b border-zinc-300 bg-transparent text-right font-bold text-zinc-500 focus:outline-none cursor-not-allowed"
                   />
                   <span className="text-sm font-bold text-zinc-500">원</span>
                 </div>
               )}
 
               {/* Result Link Input */}
-              <div className="mt-2 flex w-full flex-col items-end gap-1">
-                <div className="flex w-full items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-zinc-100 transition-all focus-within:ring-orange-500">
-                  <LinkIcon className="h-4 w-4 text-zinc-400" />
-                  <input
-                    type="text"
-                    value={post.resultLink}
-                    onChange={(e) =>
-                      handleInputChange("resultLink", e.target.value)
-                    }
-                    placeholder={
-                      post.visibility === "private"
-                        ? "결과물 링크 (선택사항)"
-                        : "결과물 링크 (https://...)"
-                    }
-                    className="w-full bg-transparent text-sm font-medium text-zinc-900 placeholder:text-zinc-300 focus:outline-none disabled:cursor-not-allowed disabled:text-zinc-400"
-                  />
+              {post.visibility !== "private" && (
+                <div className="mt-2 flex w-full flex-col items-end gap-1 opacity-70">
+                  <div className="flex w-full items-center gap-2 rounded-lg bg-zinc-50 px-3 py-2 shadow-sm ring-1 ring-zinc-200">
+                    <LinkIcon className="h-4 w-4 text-zinc-400" />
+                    <input
+                      type="text"
+                      value={post.resultLink}
+                      disabled
+                      className="w-full bg-transparent text-sm font-medium text-zinc-500 focus:outline-none cursor-not-allowed"
+                    />
+                  </div>
+                  {post.visibility === "public" && (
+                    <span className="text-xs font-bold text-orange-500">
+                      * 구매자에게만 공개됩니다
+                    </span>
+                  )}
                 </div>
-                {post.visibility === "paid" && (
-                  <span className="text-xs font-bold text-orange-500">
-                    * 구매자에게만 공개됩니다
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </div>
 

@@ -82,9 +82,9 @@ export default function PostDetailPage() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const response = await api.get<ApiResponse<{ user: { user_id: number } }>>(
-          "/users/me"
-        );
+        const response = await api.get<
+          ApiResponse<{ user: { user_id: number } }>
+        >("/users/me");
         if (response.success) {
           setCurrentUserId(String(response.data.user.user_id));
         }
@@ -144,7 +144,7 @@ export default function PostDetailPage() {
 
           // Set initial like state from API
           setIsLiked(data.is_helpful || false);
-          setIsUnlocked(visibility !== "paid");
+          setIsUnlocked(visibility !== "paid" || data.price === 0);
         } else {
           setError(response.message || "글을 불러오는데 실패했습니다.");
         }
