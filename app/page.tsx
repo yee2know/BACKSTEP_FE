@@ -26,6 +26,34 @@ interface HelpfulProjectsResponse {
   projects: HelpfulProject[];
 }
 
+interface Project {
+  name: string;
+  project_id: number;
+  project_image: string | null;
+  user: string;
+  user_id: number;
+  nickname: string;
+  profile_image: string | null;
+  period: string;
+  personnel: number;
+  intent: string;
+  my_role: string;
+  sale_status: string;
+  is_free: string | boolean;
+  price: number;
+  helpful_count: number;
+  is_helpful: boolean;
+  result_url: string;
+  failure_category: string[];
+  failure: Record<string, string[]>[];
+  growth_point: string;
+}
+
+interface ProjectsResponse {
+  data_total: number;
+  projects: Project[];
+}
+
 export default function MainPage() {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -66,7 +94,7 @@ export default function MainPage() {
     }
     executeSearch(searchQuery, searchType, selectedTags);
   };
-  
+
   // Helpful projects state
   const [allHelpfulProjects, setAllHelpfulProjects] = useState<HelpfulProject[]>([]);
   const [helpfulLoading, setHelpfulLoading] = useState(false);
@@ -76,6 +104,11 @@ export default function MainPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [likingProjects, setLikingProjects] = useState<Set<number>>(new Set());
   const itemsPerPage = 6;
+
+  // Popular and Recent posts state
+  const [popularPosts, setPopularPosts] = useState<Project[]>([]);
+  const [recentPosts, setRecentPosts] = useState<Project[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
 
   // Calculate paginated projects
   const helpfulProjects = allHelpfulProjects.slice(
@@ -103,10 +136,10 @@ export default function MainPage() {
       // JWT tokens have 3 parts separated by dots
       const parts = token.split('.');
       if (parts.length !== 3) return null;
-      
+
       // Decode the payload (second part)
       const payload = JSON.parse(atob(parts[1]));
-      
+
       // Try different possible fields for user ID
       return payload.user_id || payload.userId || payload.id || payload.sub || null;
     } catch (error) {
@@ -125,9 +158,9 @@ export default function MainPage() {
       }
 
       // Get user ID from token
-      const userId = getUserIdFromToken(token) || 
-                     (typeof window !== "undefined" ? localStorage.getItem("userId") : null);
-      
+      const userId = getUserIdFromToken(token) ||
+        (typeof window !== "undefined" ? localStorage.getItem("userId") : null);
+
       if (!userId) {
         // User ID not available, skip fetching
         console.log("User ID not available");
@@ -179,6 +212,45 @@ export default function MainPage() {
 
     fetchHelpfulProjects();
   }, []); // Only fetch once on mount
+
+  // Fetch popular and recent posts
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setPostsLoading(true);
+      try {
+        // Fetch popular posts from /projects/popular endpoint
+        const popularResponse = await api.get<ApiResponse<ProjectsResponse>>(
+          "/projects/popular"
+        );
+        if (popularResponse.success && popularResponse.data) {
+          setPopularPosts(popularResponse.data.projects || []);
+        }
+
+        // Fetch recent posts - use same endpoint and sort by project_id descending
+        // Higher project_id = more recent post
+        const recentResponse = await api.get<ApiResponse<ProjectsResponse>>(
+          "/projects/popular"
+        );
+        if (recentResponse.success && recentResponse.data) {
+          // Sort by project_id descending (highest ID first = most recent)
+          const sortedRecent = [...(recentResponse.data.projects || [])].sort(
+            (a, b) => b.project_id - a.project_id
+          );
+          // Take only first 5
+          setRecentPosts(sortedRecent.slice(0, 5));
+        }
+      } catch (error) {
+        console.error("Failed to fetch posts:", error);
+        // Set empty arrays on error
+        setPopularPosts([]);
+        setRecentPosts([]);
+      } finally {
+        setPostsLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
 
   // Handle unlike (remove from helpful projects)
   const handleUnlike = async (e: React.MouseEvent, projectId: number) => {
@@ -241,9 +313,8 @@ export default function MainPage() {
         {/* Hero Section (Scrolls naturally) */}
         <div className="mt-[20vh] mb-8 flex flex-col items-center px-4">
           <h1
-            className={`text-center text-5xl font-extrabold tracking-tight text-orange-500 sm:text-6xl transition-opacity duration-300 ${
-              isScrolled ? "opacity-0" : "opacity-100"
-            }`}
+            className={`text-center text-5xl font-extrabold tracking-tight text-orange-500 sm:text-6xl transition-opacity duration-300 ${isScrolled ? "opacity-0" : "opacity-100"
+              }`}
           >
             Cistus
           </h1>
@@ -251,9 +322,8 @@ export default function MainPage() {
 
         {/* Hero Search Container */}
         <div
-          className={`flex w-full flex-col items-center px-4 transition-opacity duration-300 ${
-            isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
+          className={`flex w-full flex-col items-center px-4 transition-opacity duration-300 ${isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
+            }`}
         >
           <form
             onSubmit={handleHeroSearch}
@@ -267,9 +337,8 @@ export default function MainPage() {
               >
                 <span>{searchType === "post" ? "글" : "프로필"}</span>
                 <ChevronDownIcon
-                  className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${
-                    isDropdownOpen ? "rotate-180" : ""
-                  }`}
+                  className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
+                    }`}
                 />
               </button>
 
@@ -281,11 +350,10 @@ export default function MainPage() {
                       setSearchType("post");
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${
-                      searchType === "post"
-                        ? "bg-orange-50 text-orange-600"
-                        : "text-zinc-600 hover:bg-zinc-50"
-                    }`}
+                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${searchType === "post"
+                      ? "bg-orange-50 text-orange-600"
+                      : "text-zinc-600 hover:bg-zinc-50"
+                      }`}
                   >
                     글
                   </button>
@@ -295,11 +363,10 @@ export default function MainPage() {
                       setSearchType("profile");
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${
-                      searchType === "profile"
-                        ? "bg-orange-50 text-orange-600"
-                        : "text-zinc-600 hover:bg-zinc-50"
-                    }`}
+                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${searchType === "profile"
+                      ? "bg-orange-50 text-orange-600"
+                      : "text-zinc-600 hover:bg-zinc-50"
+                      }`}
                   >
                     프로필
                   </button>
@@ -337,11 +404,10 @@ export default function MainPage() {
                   key={tag}
                   type="button"
                   onClick={() => toggleTag(tag)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                    isSelected
-                      ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
-                      : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
-                  }`}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${isSelected
+                    ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
+                    : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
+                    }`}
                 >
                   #{tag}
                 </button>
@@ -377,11 +443,10 @@ export default function MainPage() {
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(tag)}
-                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                        isSelected
-                          ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
-                          : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
-                      }`}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${isSelected
+                        ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
+                        : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
+                        }`}
                     >
                       #{tag}
                     </button>
@@ -419,57 +484,145 @@ export default function MainPage() {
           {/* Weekly Popular Posts */}
           <section>
             <h2 className="mb-6 text-2xl font-bold text-zinc-800">
-              주간 인기 글
+              인기 글
             </h2>
-            <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <article
-                  key={i}
-                  className="group min-w-[280px] cursor-pointer overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:min-w-[320px]"
-                >
-                  <div className="aspect-video w-full bg-zinc-100 transition-colors group-hover:bg-orange-50"></div>
-                  <div className="p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-600">
-                        Popular
-                      </span>
+            {postsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+              </div>
+            ) : popularPosts.length > 0 ? (
+              <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden">
+                {popularPosts.map((post) => (
+                  <Link
+                    key={post.project_id}
+                    href={`/post-detail/${post.project_id}`}
+                    className="group min-w-[280px] cursor-pointer overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:min-w-[320px]"
+                  >
+                    <div className="aspect-video w-full bg-zinc-100 transition-colors group-hover:bg-orange-50 overflow-hidden">
+                      {post.project_image ? (
+                        <img
+                          src={post.project_image}
+                          alt={post.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center">
+                          <span className="text-zinc-400 text-sm">이미지 없음</span>
+                        </div>
+                      )}
                     </div>
-                    <h3 className="mb-1 text-lg font-bold text-zinc-900 group-hover:text-orange-500">
-                      인기 게시글 {i + 1}
-                    </h3>
-                    <p className="line-clamp-2 text-sm text-zinc-500">
-                      많은 사람들이 읽고 있는 인기 글입니다.
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
+                    <div className="p-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-600">
+                          Popular
+                        </span>
+                        <div className="flex items-center gap-1 text-xs text-zinc-500">
+                          <HeartIcon className="h-3 w-3 text-orange-500 fill-orange-500" />
+                          <span>{post.helpful_count || 0}</span>
+                        </div>
+                      </div>
+                      <h3 className="mb-1 text-lg font-bold text-zinc-900 group-hover:text-orange-500 line-clamp-2">
+                        {post.name}
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-zinc-400 mb-1">
+                        <span>{post.nickname}</span>
+                        <span>•</span>
+                        <span>{post.period}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {post.failure_category.slice(0, 2).map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                        {post.failure_category.length > 2 && (
+                          <span className="text-[10px] text-zinc-400">
+                            +{post.failure_category.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-zinc-500">
+                인기 글이 없습니다.
+              </div>
+            )}
           </section>
 
           {/* Recent Posts */}
           <section>
             <h2 className="mb-6 text-2xl font-bold text-zinc-800">최근 글</h2>
-            <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <article
-                  key={i}
-                  className="group min-w-[280px] cursor-pointer overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:min-w-[320px]"
-                >
-                  <div className="aspect-video w-full bg-zinc-100 transition-colors group-hover:bg-orange-50"></div>
-                  <div className="p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="text-xs text-zinc-400">Just now</span>
+            {postsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+              </div>
+            ) : recentPosts.length > 0 ? (
+              <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden">
+                {recentPosts.map((post) => (
+                  <Link
+                    key={post.project_id}
+                    href={`/post-detail/${post.project_id}`}
+                    className="group min-w-[280px] cursor-pointer overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:min-w-[320px]"
+                  >
+                    <div className="aspect-video w-full bg-zinc-100 transition-colors group-hover:bg-orange-50 overflow-hidden">
+                      {post.project_image ? (
+                        <img
+                          src={post.project_image}
+                          alt={post.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center">
+                          <span className="text-zinc-400 text-sm">이미지 없음</span>
+                        </div>
+                      )}
                     </div>
-                    <h3 className="mb-1 text-lg font-bold text-zinc-900 group-hover:text-orange-500">
-                      최근 게시글 {i + 1}
-                    </h3>
-                    <p className="line-clamp-2 text-sm text-zinc-500">
-                      방금 올라온 따끈따끈한 새 글입니다.
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
+                    <div className="p-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="text-xs text-zinc-400">최신</span>
+                        <div className="flex items-center gap-1 text-xs text-zinc-500">
+                          <HeartIcon className="h-3 w-3 text-orange-500 fill-orange-500" />
+                          <span>{post.helpful_count || 0}</span>
+                        </div>
+                      </div>
+                      <h3 className="mb-1 text-lg font-bold text-zinc-900 group-hover:text-orange-500 line-clamp-2">
+                        {post.name}
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-zinc-400 mb-1">
+                        <span>{post.nickname}</span>
+                        <span>•</span>
+                        <span>{post.period}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {post.failure_category.slice(0, 2).map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                        {post.failure_category.length > 2 && (
+                          <span className="text-[10px] text-zinc-400">
+                            +{post.failure_category.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-zinc-500">
+                최근 글이 없습니다.
+              </div>
+            )}
           </section>
 
           {/* Helpful Projects (Liked Posts) */}
@@ -496,78 +649,76 @@ export default function MainPage() {
                           href={`/post-detail/${project.project_id}`}
                           className="block"
                         >
-                        <div className="aspect-video w-full bg-zinc-100 transition-colors group-hover:bg-orange-50">
-                          {project.project_image ? (
-                            <img
-                              src={project.project_image}
-                              alt={project.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center">
-                              <span className="text-zinc-400 text-sm">이미지 없음</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-4">
-                          <div className="mb-2 flex items-center gap-2 flex-wrap">
-                            {project.failure_catagory.slice(0, 2).map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
-                              >
-                                #{tag}
-                              </span>
-                            ))}
-                            {project.failure_catagory.length > 2 && (
-                              <span className="text-[10px] text-zinc-400">
-                                +{project.failure_catagory.length - 2}
-                              </span>
+                          <div className="aspect-video w-full bg-zinc-100 transition-colors group-hover:bg-orange-50">
+                            {project.project_image ? (
+                              <img
+                                src={project.project_image}
+                                alt={project.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center">
+                                <span className="text-zinc-400 text-sm">이미지 없음</span>
+                              </div>
                             )}
                           </div>
-                          <h3 className="mb-1 text-lg font-bold text-zinc-900 group-hover:text-orange-500 line-clamp-2">
-                            {project.name}
-                          </h3>
-                          <div className="flex items-center gap-2 text-xs text-zinc-400 mt-2">
-                            <span>{project.user}</span>
-                            <span>•</span>
-                            <span>{project.period}</span>
-                          </div>
-                          <div className="mt-2 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              {project.is_free === "true" || project.is_free === true ? (
-                                <span className="text-xs font-bold text-green-600">무료</span>
-                              ) : project.sale_status === "SALE" ? (
-                                <span className="text-xs font-bold text-orange-600">
-                                  ₩{project.price.toLocaleString()}
+                          <div className="p-4">
+                            <div className="mb-2 flex items-center gap-2 flex-wrap">
+                              {project.failure_catagory.slice(0, 2).map((tag, idx) => (
+                                <span
+                                  key={idx}
+                                  className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
+                                >
+                                  #{tag}
                                 </span>
-                              ) : (
-                                <span className="text-xs font-bold text-zinc-400">비공개</span>
+                              ))}
+                              {project.failure_catagory.length > 2 && (
+                                <span className="text-[10px] text-zinc-400">
+                                  +{project.failure_catagory.length - 2}
+                                </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-1 text-xs font-medium text-zinc-500">
-                              <HeartIcon className="h-3.5 w-3.5 text-orange-500 fill-orange-500" />
-                              <span>{project.helpful_count || 0}</span>
+                            <h3 className="mb-1 text-lg font-bold text-zinc-900 group-hover:text-orange-500 line-clamp-2">
+                              {project.name}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs text-zinc-400 mt-2">
+                              <span>{project.user}</span>
+                              <span>•</span>
+                              <span>{project.period}</span>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                {project.is_free === "true" || project.is_free === true ? (
+                                  <span className="text-xs font-bold text-green-600">무료</span>
+                                ) : project.sale_status === "SALE" ? (
+                                  <span className="text-xs font-bold text-orange-600">
+                                    ₩{project.price.toLocaleString()}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs font-bold text-zinc-400">비공개</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 text-xs font-medium text-zinc-500">
+                                <HeartIcon className="h-3.5 w-3.5 text-orange-500 fill-orange-500" />
+                                <span>{project.helpful_count || 0}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
                         </Link>
                         {/* Heart Icon Button */}
                         <button
                           type="button"
                           onClick={(e) => handleUnlike(e, project.project_id)}
                           disabled={likingProjects.has(project.project_id)}
-                          className={`absolute top-4 right-4 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm p-2 shadow-md transition-all hover:bg-white hover:scale-110 active:scale-95 ${
-                            likingProjects.has(project.project_id)
-                              ? "opacity-50 cursor-not-allowed"
-                              : "cursor-pointer"
-                          }`}
+                          className={`absolute top-4 right-4 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm p-2 shadow-md transition-all hover:bg-white hover:scale-110 active:scale-95 ${likingProjects.has(project.project_id)
+                            ? "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer"
+                            }`}
                           style={{ pointerEvents: likingProjects.has(project.project_id) ? "none" : "auto" }}
                         >
                           <HeartIcon
-                            className={`h-5 w-5 transition-colors ${
-                              "text-orange-500 fill-orange-500"
-                            }`}
+                            className={`h-5 w-5 transition-colors ${"text-orange-500 fill-orange-500"
+                              }`}
                           />
                         </button>
                       </div>
@@ -599,11 +750,10 @@ export default function MainPage() {
                           <button
                             key={pageNum}
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
-                              currentPage === pageNum
-                                ? "bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20"
-                                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-orange-500 hover:border-orange-200"
-                            }`}
+                            className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${currentPage === pageNum
+                              ? "bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20"
+                              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-orange-500 hover:border-orange-200"
+                              }`}
                           >
                             {pageNum}
                           </button>
