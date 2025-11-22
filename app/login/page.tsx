@@ -1,51 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const GOOGLE_LOGIN_URL = "https://ccscaps.com/api/auth/google";
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const letsgo = () => {};
-
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setStatusMessage("");
-    setErrorMessage("");
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (!token) return;
 
     try {
-      const response = await fetch(GOOGLE_LOGIN_URL, {
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error("구글 로그인 요청이 실패했어요.");
-      }
-
-      const result = await response.json();
-      const token = result?.data?.token;
-      const user = result?.data?.user;
-
-      if (!token) {
-        throw new Error("응답에 토큰이 없어요.");
-      }
-
       localStorage.setItem("cistus_token", token);
+      setStatusMessage("구글 로그인에 성공했어요! 잠시 후 메인 페이지로 이동합니다.");
 
-      if (user) {
-        localStorage.setItem("cistus_user", JSON.stringify(user));
-      }
+      const timer = setTimeout(() => {
+        router.replace("/");
+      }, 1500);
 
-      setStatusMessage("구글 로그인에 성공했어요!");
-    } catch (error: any) {
-      setErrorMessage(error?.message || "로그인에 실패했어요.");
-    } finally {
-      setIsLoading(false);
+      return () => clearTimeout(timer);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("토큰 저장 중 오류가 발생했어요. 다시 시도해주세요.");
     }
-  };
+  }, [router, searchParams]);
 
   return (
     <div className="min-h-screen bg-white text-zinc-900">
@@ -60,9 +43,8 @@ export default function LoginPage() {
         {/* Login Button */}
         <div className="flex flex-col items-center gap-4">
           <a
-            type="button"
             href={GOOGLE_LOGIN_URL}
-            className="flex items-center justify-center gap-3 w-60 h-12 bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer disabled:opacity-50"
+            className="flex items-center justify-center gap-3 w-60 h-12 bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
           >
             <svg
               width="18"
@@ -88,9 +70,7 @@ export default function LoginPage() {
                 fill="#EA4335"
               />
             </svg>
-            <span className="font-medium text-gray-700">
-              {isLoading ? "로그인 중..." : "Sign in with Google"}
-            </span>
+            <span className="font-medium text-gray-700">Sign in with Google</span>
           </a>
 
           {statusMessage ? (
