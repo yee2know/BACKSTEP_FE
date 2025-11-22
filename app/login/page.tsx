@@ -72,7 +72,9 @@ export default function LoginPage() {
                 fill="#EA4335"
               />
             </svg>
-            <span className="font-medium text-gray-700">Sign in with Google</span>
+            <span className="font-medium text-gray-700">
+              Sign in with Google
+            </span>
           </a>
         </div>
       </main>
