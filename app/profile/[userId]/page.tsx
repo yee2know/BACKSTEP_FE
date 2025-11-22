@@ -51,6 +51,14 @@ export default function UserProfilePage() {
       setLoading(true);
       setError(null);
       try {
+        const meResponse = await api.get<
+          ApiResponse<{ user: { user_id: number } }>
+        >("/users/me");
+        if (meResponse.success && `${meResponse.data.user.user_id}` === userId) {
+          router.replace("/profile");
+          return;
+        }
+
         const response = await api.get<
           ApiResponse<{ user: UserDetail }>
         >(`/users/${userId}`);
