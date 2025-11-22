@@ -67,6 +67,8 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -154,6 +156,135 @@ export default function PostDetailPage() {
     }
   };
 
+  const handleLike = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!post || !id || isLiking) {
+      return;
+    }
+
+    // Check if user is logged in
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    setIsLiking(true);
+
+    try {
+      // If already liked, remove the like (DELETE)
+      if (isLiked) {
+        try {
+          const response = await api.delete<ApiResponse>(`/users/projects/${id}/helpful`);
+          
+          if (response.success || response.code === 200) {
+            // Toggle like state
+            setIsLiked(false);
+            
+            // Update likes count
+            setPost((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                likes: Math.max(0, prev.likes - 1),
+              };
+            });
+          }
+        } catch (deleteErr: any) {
+          console.error("Unlike error:", deleteErr);
+          // If DELETE fails, just update local state (optimistic update)
+          setIsLiked(false);
+          setPost((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              likes: Math.max(0, prev.likes - 1),
+            };
+          });
+        }
+      } else {
+        // Add like (POST)
+        const response = await api.post<ApiResponse<{
+          user: {
+            user_id: number;
+            project_id: number;
+            userprojecthelpful_id: number;
+          };
+        }>>(`/users/projects/${id}/helpful`, {});
+
+        if (response.success) {
+          // Toggle like state
+          setIsLiked(true);
+          
+          // Update likes count
+          setPost((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              likes: prev.likes + 1,
+            };
+          });
+        } else {
+          // Handle error cases
+          if (response.code === 400 && response.message === "Helpful already exists") {
+            // Already liked - update local state
+            setIsLiked(true);
+            setPost((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                likes: prev.likes + 1,
+              };
+            });
+          } else if (response.code === 404) {
+            alert("프로젝트를 찾을 수 없습니다.");
+          } else if (response.code === 400) {
+            alert(response.message || "잘못된 요청입니다.");
+          } else {
+            alert(response.message || "좋아요 처리 중 오류가 발생했습니다.");
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error("Like error:", err);
+      
+      // Handle 400 Conflict (already liked) - update local state
+      if (err.code === 400 && err.message === "Helpful already exists") {
+        setIsLiked(true);
+        setPost((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            likes: prev.likes + 1,
+          };
+        });
+      } else if (err.code === 401 || err.message === "Unauthorized") {
+        // API에서 이미 리다이렉트 처리하므로 여기서는 알림만
+        console.log("Unauthorized - redirecting to login");
+      } else if (err.code === 404) {
+        alert("프로젝트를 찾을 수 없습니다.");
+      } else if (err.code === 400) {
+        alert(err.message || "잘못된 요청입니다.");
+      } else {
+        // For other errors, try optimistic update
+        if (!isLiked) {
+          setIsLiked(true);
+          setPost((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              likes: prev.likes + 1,
+            };
+          });
+        }
+      }
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -205,9 +336,29 @@ export default function PostDetailPage() {
             <h1 className="text-5xl font-black tracking-tight text-zinc-900 leading-tight">
               {post.title}
             </h1>
-            <button className="group flex flex-col items-center justify-center rounded-2xl bg-zinc-50 px-4 py-3 transition-all hover:bg-orange-50 hover:scale-105 active:scale-95">
-              <HeartIcon className="h-7 w-7 text-zinc-400 transition-colors group-hover:text-orange-500 fill-transparent group-hover:fill-orange-500" />
-              <span className="mt-1 text-xs font-bold text-zinc-500 group-hover:text-orange-600">
+            <button
+              type="button"
+              onClick={handleLike}
+              disabled={isLiking}
+              className={`group flex flex-col items-center justify-center rounded-2xl bg-zinc-50 px-4 py-3 transition-all hover:bg-orange-50 hover:scale-105 active:scale-95 ${
+                isLiking ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+              }`}
+              style={{ pointerEvents: isLiking ? "none" : "auto" }}
+            >
+              <HeartIcon
+                className={`h-7 w-7 transition-colors ${
+                  isLiked
+                    ? "text-orange-500 fill-orange-500"
+                    : "text-zinc-400 group-hover:text-orange-500 fill-transparent group-hover:fill-orange-500"
+                }`}
+              />
+              <span
+                className={`mt-1 text-xs font-bold transition-colors ${
+                  isLiked
+                    ? "text-orange-600"
+                    : "text-zinc-500 group-hover:text-orange-600"
+                }`}
+              >
                 {post.likes}
               </span>
             </button>
