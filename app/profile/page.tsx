@@ -20,7 +20,7 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
             {/* Left Column: User Profile Info (Fixed/Sticky on Desktop) */}
             <div className="lg:col-span-3">
-              <div className="sticky top-24 flex flex-col items-center text-center lg:items-start lg:text-left">
+              <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
                 {/* Profile Image */}
                 <div className="mb-6 h-40 w-40 overflow-hidden rounded-full border-4 border-white shadow-xl shadow-orange-500/10">
                   <div className="flex h-full w-full items-center justify-center bg-zinc-100 text-4xl font-bold text-zinc-300">
