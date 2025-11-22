@@ -8,27 +8,10 @@ export default function ProfileEditPage() {
     nickname: "Cistus User",
     email: "user@example.com",
     bio: "안녕하세요! 프론트엔드 개발에 관심이 많은 개발자입니다.\nReact와 Next.js를 주로 사용하며, 사용자 경험을 개선하는 UI 디자인에 흥미가 있습니다.\n꾸준히 기록하고 성장하는 개발자가 되고 싶습니다.",
-    skills: ["React", "Next.js", "TypeScript", "TailwindCSS"],
   });
-
-  const [newSkill, setNewSkill] = useState("");
 
   const handleInputChange = (field: string, value: any) => {
     setUser((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const addSkill = () => {
-    if (newSkill && !user.skills.includes(newSkill)) {
-      setUser((prev) => ({ ...prev, skills: [...prev.skills, newSkill] }));
-      setNewSkill("");
-    }
-  };
-
-  const removeSkill = (skillToRemove: string) => {
-    setUser((prev) => ({
-      ...prev,
-      skills: prev.skills.filter((skill) => skill !== skillToRemove),
-    }));
   };
 
   return (
@@ -105,45 +88,6 @@ export default function ProfileEditPage() {
             />
           </section>
 
-          {/* Skills Section */}
-          <section>
-            <label className="mb-2 block text-sm font-bold text-zinc-700">
-              기술 스택
-            </label>
-            <div className="mb-3 flex flex-wrap gap-2">
-              {user.skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="flex items-center gap-1 rounded-full bg-orange-50 px-3 py-1 text-sm font-bold text-orange-600 border border-orange-100"
-                >
-                  {skill}
-                  <button
-                    onClick={() => removeSkill(skill)}
-                    className="ml-1 rounded-full p-0.5 hover:bg-orange-200"
-                  >
-                    <XIcon className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newSkill}
-                onChange={(e) => setNewSkill(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addSkill()}
-                className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-900 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                placeholder="기술 스택을 입력하고 Enter를 누르세요"
-              />
-              <button
-                onClick={addSkill}
-                className="rounded-xl bg-zinc-900 px-6 font-bold text-white transition-colors hover:bg-zinc-700"
-              >
-                추가
-              </button>
-            </div>
-          </section>
-
           {/* Action Buttons */}
           <div className="flex gap-4 pt-6 border-t border-zinc-100">
             <button className="flex-1 rounded-xl border border-zinc-200 bg-white py-4 font-bold text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900">
@@ -173,24 +117,6 @@ function CameraIcon({ className }: { className?: string }) {
     >
       <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
       <circle cx="12" cy="13" r="3" />
-    </svg>
-  );
-}
-
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
     </svg>
   );
 }
