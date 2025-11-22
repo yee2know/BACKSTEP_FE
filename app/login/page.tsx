@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const GOOGLE_LOGIN_URL =
-  "https://ec2-54-180-89-215.ap-northeast-2.compute.amazonaws.com:3000/api/auth/google";
+  "http://ec2-54-180-89-215.ap-northeast-2.compute.amazonaws.com:3000/api/auth/google";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
