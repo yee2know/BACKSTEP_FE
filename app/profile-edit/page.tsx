@@ -286,7 +286,11 @@ export default function ProfileEditPage() {
 
           {/* Action Buttons */}
           <div className="flex gap-4 pt-6 border-t border-zinc-100">
-            <button className="flex-1 rounded-xl border border-zinc-200 bg-white py-4 font-bold text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900">
+            <button
+              type="button"
+              onClick={() => router.replace("/profile")}
+              className="flex-1 rounded-xl border border-zinc-200 bg-white py-4 font-bold text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+            >
               취소
             </button>
             <button
