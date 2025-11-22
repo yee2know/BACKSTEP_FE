@@ -538,9 +538,9 @@ function UserResultCard({
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <article className="rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
-      <div className="flex items-center gap-4">
-        <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-orange-100 bg-zinc-50">
+    <article className="h-44 w-full rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
+      <div className="flex items-start gap-4 h-full">
+        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-orange-100 bg-zinc-50">
           {user.profile_image ? (
             <img
               src={user.profile_image}
@@ -553,9 +553,11 @@ function UserResultCard({
             </div>
           )}
         </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-zinc-900">{displayName}</h3>
-          <p className="mt-3 text-sm text-zinc-500 line-clamp-3">
+        <div className="flex-1 min-w-0 flex flex-col">
+          <h3 className="text-lg font-bold text-zinc-900 truncate">
+            {displayName}
+          </h3>
+          <p className="mt-2 text-sm text-zinc-500 line-clamp-3 break-keep">
             {bio?.trim() || "자기소개가 아직 없습니다."}
           </p>
         </div>
