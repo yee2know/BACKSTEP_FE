@@ -109,7 +109,6 @@ export function Navbar({
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
 
     try {
       if (propOnSearch) {

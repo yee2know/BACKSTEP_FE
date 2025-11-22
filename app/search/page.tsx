@@ -95,7 +95,7 @@ function SearchPageContent() {
     if (trimmed) {
       params.set("q", trimmed);
     }
-    if (categories.length) {
+    if (type === "post" && categories.length) {
       const encoded = categories
         .map((tag) => encodeURIComponent(tag))
         .join(",");
@@ -116,13 +116,6 @@ function SearchPageContent() {
     const typeParam =
       searchParams.get("type") === "profile" ? "user" : "project";
 
-    if (!keyword && categories.length === 0 && typeParam === "project") {
-      setResults([]);
-      setTotalResults(0);
-      setResponseMeta(null);
-      return;
-    }
-
     let isCancelled = false;
 
     const fetchSearchResults = async () => {
@@ -134,8 +127,8 @@ function SearchPageContent() {
           {
             type: typeParam,
             keyword,
-            failure_catagory: categories,
-            failure_category: categories,
+            failure_catagory: typeParam === "project" ? categories : [],
+            failure_category: typeParam === "project" ? categories : [],
           }
         );
 
@@ -257,7 +250,8 @@ function SearchPageContent() {
     });
   }, [results, filter, responseMeta]);
 
-  const headerKeyword = responseMeta?.keyword || searchQuery || "검색어";
+  const rawKeyword = responseMeta?.keyword ?? searchQuery ?? "";
+  const headerKeyword = rawKeyword.trim().length > 0 ? rawKeyword : "전체";
   const handleNavbarSearch = (query: string, type: "post" | "profile") =>
     executeSearch(query, type, selectedCategories);
 
@@ -321,7 +315,8 @@ function SearchPageContent() {
           )}
         </div>
 
-        <div className="mb-10 rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
+        {searchType === "post" && (
+          <div className="mb-10 rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
           <div className="flex items-center justify-between gap-4 mb-3">
             <p className="text-sm font-semibold text-zinc-600">
               실패 카테고리 선택 ({selectedCategories.length})
@@ -376,7 +371,8 @@ function SearchPageContent() {
               </button>
             )}
           </div>
-        </div>
+          </div>
+        )}
 
         <section className="pb-20">
           {loading ? (
