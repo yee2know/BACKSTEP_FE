@@ -21,9 +21,29 @@ type UserResponse = {
   };
 };
 
+type UserDetailResponse = {
+  success: boolean;
+  code: number;
+  message: string;
+  data: {
+    user: {
+      user_id: number;
+      name: string;
+      nickname: string | null;
+      email: string;
+      profile_image: string | null;
+      bio: string | null;
+      created_at: string;
+      updated_at: string;
+    };
+  };
+};
+
 export default function ProfilePage() {
   const [searchType, setSearchType] = useState<"post" | "profile">("post");
-  const [user, setUser] = useState<UserResponse["data"]["user"] | null>(null);
+  const [user, setUser] = useState<UserDetailResponse["data"]["user"] | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -31,10 +51,17 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       try {
         const response = await api.get<UserResponse>("/users/me");
-        setUser(response.data.user);
+        const userId = response.data.user.user_id;
+
+        const detailResponse = await api.get<UserDetailResponse>(
+          `/users/${userId}`
+        );
+        setUser(detailResponse.data.user);
       } catch (error) {
         console.error("Failed to fetch user info", error);
-        setErrorMessage("사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+        setErrorMessage(
+          "사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -43,7 +70,7 @@ export default function ProfilePage() {
     fetchProfile();
   }, []);
 
-  const mockBio = useMemo(
+  const defaultBio = useMemo(
     () =>
       "안녕하세요! 프론트엔드 개발에 관심이 많은 개발자입니다. React와 Next.js를 주로 사용하며, 사용자 경험을 개선하는 UI 디자인에 흥미가 있습니다. 꾸준히 기록하고 성장하는 개발자가 되고 싶습니다.",
     []
@@ -66,9 +93,17 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
                 {/* Profile Image */}
                 <div className="mb-6 h-40 w-40 overflow-hidden rounded-full border-4 border-white shadow-xl shadow-orange-500/10">
-                  <div className="flex h-full w-full items-center justify-center bg-zinc-100 text-4xl font-bold text-zinc-300">
-                    U
-                  </div>
+                  {user?.profile_image ? (
+                    <img
+                      src={user.profile_image}
+                      alt="사용자 프로필 이미지"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-zinc-100 text-4xl font-bold text-zinc-300">
+                      {user?.name?.charAt(0) ?? "U"}
+                    </div>
+                  )}
                 </div>
 
                 {/* User Identity */}
@@ -86,7 +121,11 @@ export default function ProfilePage() {
                 ) : null}
 
                 {/* Bio */}
-                <p className="mb-6 leading-relaxed text-zinc-600">{mockBio}</p>
+                <p className="mb-6 leading-relaxed text-zinc-600">
+                  {user?.bio?.trim()
+                    ? user.bio
+                    : defaultBio}
+                </p>
 
                 {/* Edit Button */}
                 <Link
