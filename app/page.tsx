@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Navbar } from "./_components/Navbar";
 import { AVAILABLE_TAGS } from "../lib/tags";
 import { api, ApiResponse } from "../lib/api";
+import { HeartIcon } from "lucide-react";
 
 interface HelpfulProject {
   name: string;
@@ -35,6 +36,7 @@ export default function MainPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [likingProjects, setLikingProjects] = useState<Set<number>>(new Set());
   const itemsPerPage = 6;
 
   // Calculate paginated projects
@@ -119,7 +121,7 @@ export default function MainPage() {
             setHelpfulError(null); // Don't show error, just don't display section
           } else if (response.code === 404) {
             // User not found or no helpful projects
-            setHelpfulProjects([]);
+            setAllHelpfulProjects([]);
           } else {
             setHelpfulError(response.message || "좋아요한 글을 불러오는데 실패했습니다.");
           }
@@ -139,6 +141,50 @@ export default function MainPage() {
 
     fetchHelpfulProjects();
   }, []); // Only fetch once on mount
+
+  // Handle unlike (remove from helpful projects)
+  const handleUnlike = async (e: React.MouseEvent, projectId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    if (likingProjects.has(projectId)) {
+      return; // Already processing
+    }
+
+    setLikingProjects((prev) => new Set(prev).add(projectId));
+
+    try {
+      // DELETE request to remove helpful
+      await api.delete<ApiResponse>(`/users/projects/${projectId}/helpful`);
+
+      // Remove from local state
+      setAllHelpfulProjects((prev) => prev.filter((p) => p.project_id !== projectId));
+      setTotalItems((prev) => Math.max(0, prev - 1));
+      setTotalPages((prev) => Math.ceil(Math.max(0, totalItems - 1) / itemsPerPage));
+    } catch (err: any) {
+      console.error("Unlike error:", err);
+      if (err.code === 404) {
+        // Already removed, just update local state
+        setAllHelpfulProjects((prev) => prev.filter((p) => p.project_id !== projectId));
+        setTotalItems((prev) => Math.max(0, prev - 1));
+        setTotalPages((prev) => Math.ceil(Math.max(0, totalItems - 1) / itemsPerPage));
+      } else {
+        alert("좋아요 취소 중 오류가 발생했습니다.");
+      }
+    } finally {
+      setLikingProjects((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(projectId);
+        return newSet;
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-zinc-900">
@@ -323,11 +369,14 @@ export default function MainPage() {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                     {helpfulProjects.map((project) => (
-                      <Link
+                      <div
                         key={project.project_id}
-                        href={`/post-detail/${project.project_id}`}
-                        className="group cursor-pointer overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+                        className="group relative overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
                       >
+                        <Link
+                          href={`/post-detail/${project.project_id}`}
+                          className="block"
+                        >
                         <div className="aspect-video w-full bg-zinc-100 transition-colors group-hover:bg-orange-50">
                           {project.project_image ? (
                             <img
@@ -377,7 +426,26 @@ export default function MainPage() {
                             )}
                           </div>
                         </div>
-                      </Link>
+                        </Link>
+                        {/* Heart Icon Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleUnlike(e, project.project_id)}
+                          disabled={likingProjects.has(project.project_id)}
+                          className={`absolute top-4 right-4 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm p-2 shadow-md transition-all hover:bg-white hover:scale-110 active:scale-95 ${
+                            likingProjects.has(project.project_id)
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer"
+                          }`}
+                          style={{ pointerEvents: likingProjects.has(project.project_id) ? "none" : "auto" }}
+                        >
+                          <HeartIcon
+                            className={`h-5 w-5 transition-colors ${
+                              "text-orange-500 fill-orange-500"
+                            }`}
+                          />
+                        </button>
+                      </div>
                     ))}
                   </div>
 
