@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Navbar } from "../_components/Navbar";
 
@@ -40,9 +41,12 @@ export default function ProfilePage() {
                 </p>
 
                 {/* Edit Button */}
-                <button className="mb-8 w-full rounded-xl border-2 border-zinc-200 bg-white py-3 font-bold text-zinc-700 transition-all hover:border-orange-500 hover:text-orange-500 hover:shadow-lg hover:shadow-orange-500/10">
+                <Link
+                  href="/profile-edit"
+                  className="mb-8 flex w-full items-center justify-center rounded-xl border-2 border-zinc-200 bg-white py-3 font-bold text-zinc-700 transition-all hover:border-orange-500 hover:text-orange-500 hover:shadow-lg hover:shadow-orange-500/10"
+                >
                   프로필 편집
-                </button>
+                </Link>
               </div>
             </div>
 
