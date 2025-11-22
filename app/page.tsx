@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "./_components/Navbar";
 import { AVAILABLE_TAGS } from "../lib/tags";
 import { api, ApiResponse } from "../lib/api";
 import { HeartIcon } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface HelpfulProject {
   name: string;
@@ -122,6 +123,34 @@ export default function MainPage() {
   const [popularPosts, setPopularPosts] = useState<Project[]>([]);
   const [recentPosts, setRecentPosts] = useState<Project[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  const [currentPopularIndex, setCurrentPopularIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-rotate popular posts
+  useEffect(() => {
+    if (popularPosts.length === 0 || isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentPopularIndex((prev) => (prev + 1) % popularPosts.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [popularPosts.length, isPaused]);
+
+  const handlePopularItemClick = (e: React.MouseEvent, index: number) => {
+    if (index !== currentPopularIndex) {
+      e.preventDefault();
+      setCurrentPopularIndex(index);
+      setIsPaused(true);
+
+      if (resumeTimeoutRef.current) {
+        clearTimeout(resumeTimeoutRef.current);
+      }
+
+      resumeTimeoutRef.current = setTimeout(() => {
+        setIsPaused(false);
+      }, 3000);
+    }
+  };
 
   // Calculate paginated projects
   const helpfulProjects = allHelpfulProjects.slice(
@@ -539,64 +568,90 @@ export default function MainPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
               </div>
             ) : popularPosts.length > 0 ? (
-              <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden">
-                {popularPosts.map((post) => (
-                  <Link
-                    key={post.project_id}
-                    href={`/post-detail/${post.project_id}`}
-                    className="group min-w-[280px] cursor-pointer overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:min-w-[320px]"
-                  >
-                    <div className="aspect-video w-full bg-zinc-100 transition-colors group-hover:bg-orange-50 overflow-hidden">
-                      {post.project_image ? (
-                        <img
-                          src={post.project_image}
-                          alt={post.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center">
-                          <span className="text-zinc-400 text-sm">
-                            이미지 없음
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <div className="mb-2 flex items-center gap-2">
-                        <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-600">
-                          Popular
-                        </span>
-                        <div className="flex items-center gap-1 text-xs text-zinc-500">
-                          <HeartIcon className="h-3 w-3 text-orange-500 fill-orange-500" />
-                          <span>{post.helpful_count || 0}</span>
-                        </div>
-                      </div>
-                      <h3 className="mb-1 text-lg font-bold text-zinc-900 group-hover:text-orange-500 line-clamp-2">
-                        {post.name}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-zinc-400 mb-1">
-                        <span>{post.nickname}</span>
-                        <span>•</span>
-                        <span>{post.period}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {post.failure_category.slice(0, 2).map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                        {post.failure_category.length > 2 && (
-                          <span className="text-[10px] text-zinc-400">
-                            +{post.failure_category.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+              <div className="relative w-full py-10 overflow-hidden">
+                <motion.div
+                  className="flex items-center gap-4"
+                  animate={{
+                    x: `calc(50% - ${currentPopularIndex * 336}px - 160px)`,
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                >
+                  {popularPosts.map((post, idx) => {
+                    const isCenter = idx === currentPopularIndex;
+                    return (
+                      <motion.div
+                        key={post.project_id}
+                        animate={{
+                          scale: isCenter ? 1.1 : 0.9,
+                          opacity: isCenter ? 1 : 0.5,
+                          filter: isCenter ? "blur(0px)" : "blur(2px)",
+                        }}
+                        transition={{ duration: 0.3 }}
+                        className="relative shrink-0"
+                      >
+                        <Link
+                          href={`/post-detail/${post.project_id}`}
+                          onClick={(e) => handlePopularItemClick(e, idx)}
+                          className="block w-[320px] overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm"
+                          draggable={false}
+                        >
+                          <div className="aspect-video w-full bg-zinc-100 transition-colors group-hover:bg-orange-50 overflow-hidden">
+                            {post.project_image ? (
+                              <img
+                                src={post.project_image}
+                                alt={post.name}
+                                className="h-full w-full object-cover"
+                                draggable={false}
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center">
+                                <span className="text-zinc-400 text-sm">
+                                  이미지 없음
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <div className="mb-2 flex items-center justify-between">
+                              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-600">
+                                Popular
+                              </span>
+                              <div className="flex items-center gap-1 text-xs text-zinc-500">
+                                <HeartIcon className="h-3 w-3 text-orange-500 fill-orange-500" />
+                                <span>{post.helpful_count || 0}</span>
+                              </div>
+                            </div>
+                            <h3 className="mb-1 text-lg font-bold text-zinc-900 line-clamp-2">
+                              {post.name}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs text-zinc-400 mb-3">
+                              <span>{post.nickname}</span>
+                              <span>•</span>
+                              <span>{post.period}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {post.failure_category
+                                .slice(0, 2)
+                                .map((tag, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
+                                  >
+                                    #{tag}
+                                  </span>
+                                ))}
+                              {post.failure_category.length > 2 && (
+                                <span className="text-[10px] text-zinc-400">
+                                  +{post.failure_category.length - 2}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
               </div>
             ) : (
               <div className="text-center py-12 text-zinc-500">
@@ -636,8 +691,10 @@ export default function MainPage() {
                       )}
                     </div>
                     <div className="p-4">
-                      <div className="mb-2 flex items-center gap-2">
-                        <span className="text-xs text-zinc-400">최신</span>
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-600">
+                          New
+                        </span>
                         <div className="flex items-center gap-1 text-xs text-zinc-500">
                           <HeartIcon className="h-3 w-3 text-orange-500 fill-orange-500" />
                           <span>{post.helpful_count || 0}</span>
@@ -646,12 +703,12 @@ export default function MainPage() {
                       <h3 className="mb-1 text-lg font-bold text-zinc-900 group-hover:text-orange-500 line-clamp-2">
                         {post.name}
                       </h3>
-                      <div className="flex items-center gap-2 text-xs text-zinc-400 mb-1">
+                      <div className="flex items-center gap-2 text-xs text-zinc-400 mb-3">
                         <span>{post.nickname}</span>
                         <span>•</span>
                         <span>{post.period}</span>
                       </div>
-                      <div className="flex flex-wrap gap-1 mt-2">
+                      <div className="flex flex-wrap gap-1">
                         {post.failure_category.slice(0, 2).map((tag, idx) => (
                           <span
                             key={idx}
@@ -719,32 +776,41 @@ export default function MainPage() {
                             )}
                           </div>
                           <div className="p-4">
-                            <div className="mb-2 flex items-center gap-2 flex-wrap">
-                              {project.failure_catagory
-                                .slice(0, 2)
-                                .map((tag, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
-                                  >
-                                    #{tag}
-                                  </span>
-                                ))}
-                              {project.failure_catagory.length > 2 && (
-                                <span className="text-[10px] text-zinc-400">
-                                  +{project.failure_catagory.length - 2}
-                                </span>
-                              )}
+                            <div className="mb-2 flex items-center justify-between">
+                              <span className="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600">
+                                Like
+                              </span>
+                              <div className="flex items-center gap-1 text-xs font-medium text-zinc-500">
+                                <HeartIcon className="h-3.5 w-3.5 text-orange-500 fill-orange-500" />
+                                <span>{project.helpful_count || 0}</span>
+                              </div>
                             </div>
                             <h3 className="mb-1 text-lg font-bold text-zinc-900 group-hover:text-orange-500 line-clamp-2">
                               {project.name}
                             </h3>
-                            <div className="flex items-center gap-2 text-xs text-zinc-400 mt-2">
+                            <div className="flex items-center gap-2 text-xs text-zinc-400 mb-3">
                               <span>{project.user}</span>
                               <span>•</span>
                               <span>{project.period}</span>
                             </div>
-                            <div className="mt-2 flex items-center justify-between">
+                            <div className="flex items-center justify-between">
+                              <div className="flex flex-wrap gap-1">
+                                {project.failure_catagory
+                                  .slice(0, 2)
+                                  .map((tag, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
+                                    >
+                                      #{tag}
+                                    </span>
+                                  ))}
+                                {project.failure_catagory.length > 2 && (
+                                  <span className="text-[10px] text-zinc-400">
+                                    +{project.failure_catagory.length - 2}
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex items-center gap-2">
                                 {project.is_free === "true" ||
                                 project.is_free === true ? (
@@ -760,10 +826,6 @@ export default function MainPage() {
                                     비공개
                                   </span>
                                 )}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs font-medium text-zinc-500">
-                                <HeartIcon className="h-3.5 w-3.5 text-orange-500 fill-orange-500" />
-                                <span>{project.helpful_count || 0}</span>
                               </div>
                             </div>
                           </div>

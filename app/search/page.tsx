@@ -476,38 +476,40 @@ function ProjectResultCard({ project }: { project: SearchProjectResult }) {
             </div>
           )}
         </div>
-        <div className="flex h-full flex-col gap-3 p-4">
-          <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-zinc-500">
+        <div className="flex h-full flex-col p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                isFree
+                  ? "bg-green-100 text-green-600"
+                  : isPaid
+                  ? "bg-orange-100 text-orange-600"
+                  : "bg-zinc-100 text-zinc-400"
+              }`}
+            >
+              {priceLabel}
+            </span>
+          </div>
+          <h3 className="mb-1 text-lg font-bold text-zinc-900 line-clamp-2 group-hover:text-orange-500">
+            {project.name}
+          </h3>
+          <div className="flex items-center gap-2 text-xs text-zinc-400 mb-3">
+            <span>
+              {project.user}
+              {project.nickname ? ` (@${project.nickname})` : ""}
+            </span>
+            <span>•</span>
+            <span>{project.period}</span>
+          </div>
+          <div className="mt-auto flex flex-wrap gap-1">
             {project.failure_category?.slice(0, 3).map((category) => (
               <span
                 key={category}
-                className="rounded-full bg-zinc-100 px-2 py-0.5"
+                className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
               >
                 #{category}
               </span>
             ))}
-          </div>
-          <h3 className="text-lg font-bold text-zinc-900 line-clamp-2 group-hover:text-orange-500">
-            {project.name}
-          </h3>
-          <p className="text-xs text-zinc-400">
-            {project.user} • {project.period}
-          </p>
-          <div className="mt-auto flex items-center justify-between text-sm font-semibold">
-            <span
-              className={
-                isFree
-                  ? "text-green-600"
-                  : isPaid
-                  ? "text-orange-600"
-                  : "text-zinc-400"
-              }
-            >
-              {priceLabel}
-            </span>
-            {project.nickname ? (
-              <span className="text-zinc-500">@{project.nickname}</span>
-            ) : null}
           </div>
         </div>
       </Link>
