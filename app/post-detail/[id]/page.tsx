@@ -107,7 +107,6 @@ export default function PostDetailPage() {
 
         if (response.success) {
           const data = response.data;
-          console.log("Post Detail Data:", data); // Debugging
 
           // Map API data to UI state
           const mappedFailures: FailureData[] = data.failure.map((item) => {
@@ -121,8 +120,8 @@ export default function PostDetailPage() {
           const visibility = isFree
             ? "free"
             : data.sale_status === "SALE" || data.sale_status === "ONSALE"
-            ? "paid"
-            : "private";
+              ? "paid"
+              : "private";
 
           setPost({
             title: data.name,
@@ -146,11 +145,28 @@ export default function PostDetailPage() {
           setIsLiked(data.is_helpful || false);
           setIsUnlocked(visibility !== "paid");
         } else {
-          setError(response.message || "글을 불러오는데 실패했습니다.");
+          // Handle specific error codes
+          if (response.code === 400) {
+            setError("잘못된 프로젝트 ID입니다.");
+          } else if (response.code === 404) {
+            setError("프로젝트를 찾을 수 없습니다.");
+          } else if (response.code === 500) {
+            setError("서버 내부 오류가 발생했습니다.");
+          } else {
+            setError(response.message || "글을 불러오는데 실패했습니다.");
+          }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        setError("서버 통신 중 오류가 발생했습니다.");
+        if (err.code === 400) {
+          setError("잘못된 프로젝트 ID입니다.");
+        } else if (err.code === 404) {
+          setError("프로젝트를 찾을 수 없습니다.");
+        } else if (err.code === 500) {
+          setError("서버 내부 오류가 발생했습니다.");
+        } else {
+          setError("서버 통신 중 오류가 발생했습니다.");
+        }
       } finally {
         setLoading(false);
       }
@@ -391,24 +407,21 @@ export default function PostDetailPage() {
                 type="button"
                 onClick={handleLike}
                 disabled={isLiking}
-                className={`group flex flex-col items-center justify-center rounded-2xl bg-zinc-50 px-4 py-3 transition-all hover:bg-orange-50 hover:scale-105 active:scale-95 ${
-                  isLiking ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                }`}
+                className={`group flex flex-col items-center justify-center rounded-2xl bg-zinc-50 px-4 py-3 transition-all hover:bg-orange-50 hover:scale-105 active:scale-95 ${isLiking ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  }`}
                 style={{ pointerEvents: isLiking ? "none" : "auto" }}
               >
                 <HeartIcon
-                  className={`h-7 w-7 transition-colors ${
-                    isLiked
+                  className={`h-7 w-7 transition-colors ${isLiked
                       ? "text-orange-500 fill-orange-500"
                       : "text-zinc-400 group-hover:text-orange-500 fill-transparent group-hover:fill-orange-500"
-                  }`}
+                    }`}
                 />
                 <span
-                  className={`mt-1 text-xs font-bold transition-colors ${
-                    isLiked
+                  className={`mt-1 text-xs font-bold transition-colors ${isLiked
                       ? "text-orange-600"
                       : "text-zinc-500 group-hover:text-orange-600"
-                  }`}
+                    }`}
                 >
                   {post.likes}
                 </span>
