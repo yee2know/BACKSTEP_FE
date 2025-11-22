@@ -44,8 +44,12 @@ interface PostData {
 
 interface ApiProjectDetail {
   name: string;
+  project_id: number;
+  project_image: string | null;
   user: string;
+  user_id: number;
   nickname: string;
+  profile_image: string | null;
   period: string;
   personnel: number;
   intent: string;
@@ -53,6 +57,8 @@ interface ApiProjectDetail {
   sale_status: string;
   is_free: string | boolean;
   price: number;
+  helpful_count: number;
+  is_helpful: boolean;
   result_url: string;
   failure_category: string[];
   failure: Record<string, string[]>[];
@@ -93,15 +99,15 @@ export default function PostDetailPage() {
           const isFree = data.is_free === "true" || data.is_free === true;
           const visibility = isFree
             ? "free"
-            : data.sale_status === "ONSALE"
+            : data.sale_status === "SALE" || data.sale_status === "ONSALE"
             ? "paid"
             : "private";
 
           setPost({
             title: data.name,
-            thumbnail: null, // API doesn't provide thumbnail yet
+            thumbnail: data.project_image,
             duration: data.period,
-            likes: 0, // API doesn't provide likes yet
+            likes: data.helpful_count || 0,
             author: data.nickname,
             authorId: data.user,
             role: data.my_role,
@@ -115,6 +121,8 @@ export default function PostDetailPage() {
             lessons: data.growth_point,
           });
 
+          // Set initial like state from API
+          setIsLiked(data.is_helpful || false);
           setIsUnlocked(visibility !== "paid");
         } else {
           setError(response.message || "글을 불러오는데 실패했습니다.");
