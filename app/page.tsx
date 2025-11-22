@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Navbar } from "./_components/Navbar";
 
 export default function MainPage() {
@@ -187,6 +188,14 @@ export default function MainPage() {
           </section>
         </div>
       </main>
+
+      {/* Floating Action Button */}
+      <Link
+        href="/post-publish"
+        className="fixed bottom-8 right-8 z-50 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all hover:scale-110 hover:bg-orange-600 hover:shadow-orange-500/50"
+      >
+        <PencilIcon className="h-6 w-6" />
+      </Link>
     </div>
   );
 }
@@ -222,6 +231,23 @@ function ChevronDownIcon({ className }: { className?: string }) {
       className={className}
     >
       <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
     </svg>
   );
 }
