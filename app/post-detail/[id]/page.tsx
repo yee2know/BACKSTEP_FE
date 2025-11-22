@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Navbar } from "../../_components/Navbar";
 import {
   CalendarIcon,
@@ -13,6 +14,7 @@ import {
   MessageCircleIcon,
   LightbulbIcon,
   LockIcon,
+  PencilIcon,
 } from "lucide-react";
 
 import { TAG_DATA } from "../../../lib/tags";
@@ -45,7 +47,9 @@ interface PostData {
 interface ApiProjectDetail {
   name: string;
   user: string;
+  user_id: number;
   nickname: string;
+  project_image: string;
   period: string;
   personnel: number;
   intent: string;
@@ -69,6 +73,24 @@ export default function PostDetailPage() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await api.get<ApiResponse<{ user: { user_id: number } }>>(
+          "/users/me"
+        );
+        if (response.success) {
+          setCurrentUserId(String(response.data.user.user_id));
+        }
+      } catch (error) {
+        console.error("Failed to fetch current user:", error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -81,6 +103,7 @@ export default function PostDetailPage() {
 
         if (response.success) {
           const data = response.data;
+          console.log("Post Detail Data:", data); // Debugging
 
           // Map API data to UI state
           const mappedFailures: FailureData[] = data.failure.map((item) => {
@@ -99,11 +122,11 @@ export default function PostDetailPage() {
 
           setPost({
             title: data.name,
-            thumbnail: null, // API doesn't provide thumbnail yet
+            thumbnail: data.project_image,
             duration: data.period,
             likes: 0, // API doesn't provide likes yet
             author: data.nickname,
-            authorId: data.user,
+            authorId: String(data.user_id),
             role: data.my_role,
             teamSize: data.personnel,
             tags: data.failure_category,
@@ -159,13 +182,16 @@ export default function PostDetailPage() {
   const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!post || !id || isLiking) {
       return;
     }
 
     // Check if user is logged in
-    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null;
     if (!token) {
       alert("로그인이 필요합니다.");
       return;
@@ -177,12 +203,14 @@ export default function PostDetailPage() {
       // If already liked, remove the like (DELETE)
       if (isLiked) {
         try {
-          const response = await api.delete<ApiResponse>(`/users/projects/${id}/helpful`);
-          
+          const response = await api.delete<ApiResponse>(
+            `/users/projects/${id}/helpful`
+          );
+
           if (response.success || response.code === 200) {
             // Toggle like state
             setIsLiked(false);
-            
+
             // Update likes count
             setPost((prev) => {
               if (!prev) return prev;
@@ -206,18 +234,20 @@ export default function PostDetailPage() {
         }
       } else {
         // Add like (POST)
-        const response = await api.post<ApiResponse<{
-          user: {
-            user_id: number;
-            project_id: number;
-            userprojecthelpful_id: number;
-          };
-        }>>(`/users/projects/${id}/helpful`, {});
+        const response = await api.post<
+          ApiResponse<{
+            user: {
+              user_id: number;
+              project_id: number;
+              userprojecthelpful_id: number;
+            };
+          }>
+        >(`/users/projects/${id}/helpful`, {});
 
         if (response.success) {
           // Toggle like state
           setIsLiked(true);
-          
+
           // Update likes count
           setPost((prev) => {
             if (!prev) return prev;
@@ -228,7 +258,10 @@ export default function PostDetailPage() {
           });
         } else {
           // Handle error cases
-          if (response.code === 400 && response.message === "Helpful already exists") {
+          if (
+            response.code === 400 &&
+            response.message === "Helpful already exists"
+          ) {
             // Already liked - update local state
             setIsLiked(true);
             setPost((prev) => {
@@ -249,7 +282,7 @@ export default function PostDetailPage() {
       }
     } catch (err: any) {
       console.error("Like error:", err);
-      
+
       // Handle 400 Conflict (already liked) - update local state
       if (err.code === 400 && err.message === "Helpful already exists") {
         setIsLiked(true);
@@ -336,32 +369,45 @@ export default function PostDetailPage() {
             <h1 className="text-5xl font-black tracking-tight text-zinc-900 leading-tight">
               {post.title}
             </h1>
-            <button
-              type="button"
-              onClick={handleLike}
-              disabled={isLiking}
-              className={`group flex flex-col items-center justify-center rounded-2xl bg-zinc-50 px-4 py-3 transition-all hover:bg-orange-50 hover:scale-105 active:scale-95 ${
-                isLiking ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-              }`}
-              style={{ pointerEvents: isLiking ? "none" : "auto" }}
-            >
-              <HeartIcon
-                className={`h-7 w-7 transition-colors ${
-                  isLiked
-                    ? "text-orange-500 fill-orange-500"
-                    : "text-zinc-400 group-hover:text-orange-500 fill-transparent group-hover:fill-orange-500"
+            <div className="flex items-center gap-3">
+              {currentUserId === post.authorId && (
+                <Link
+                  href={`/post-edit/${id}`}
+                  className="group flex flex-col items-center justify-center rounded-2xl bg-zinc-50 px-4 py-3 transition-all hover:bg-zinc-100 hover:scale-105 active:scale-95"
+                >
+                  <PencilIcon className="h-7 w-7 text-zinc-400 transition-colors group-hover:text-zinc-600" />
+                  <span className="mt-1 text-xs font-bold text-zinc-500 transition-colors group-hover:text-zinc-600">
+                    수정
+                  </span>
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={handleLike}
+                disabled={isLiking}
+                className={`group flex flex-col items-center justify-center rounded-2xl bg-zinc-50 px-4 py-3 transition-all hover:bg-orange-50 hover:scale-105 active:scale-95 ${
+                  isLiking ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                 }`}
-              />
-              <span
-                className={`mt-1 text-xs font-bold transition-colors ${
-                  isLiked
-                    ? "text-orange-600"
-                    : "text-zinc-500 group-hover:text-orange-600"
-                }`}
+                style={{ pointerEvents: isLiking ? "none" : "auto" }}
               >
-                {post.likes}
-              </span>
-            </button>
+                <HeartIcon
+                  className={`h-7 w-7 transition-colors ${
+                    isLiked
+                      ? "text-orange-500 fill-orange-500"
+                      : "text-zinc-400 group-hover:text-orange-500 fill-transparent group-hover:fill-orange-500"
+                  }`}
+                />
+                <span
+                  className={`mt-1 text-xs font-bold transition-colors ${
+                    isLiked
+                      ? "text-orange-600"
+                      : "text-zinc-500 group-hover:text-orange-600"
+                  }`}
+                >
+                  {post.likes}
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* 2. Tags */}

@@ -42,6 +42,11 @@ export default function PostPublishPage() {
   const [isRecommending, setIsRecommending] = useState(false);
   const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
 
+  // Image upload states
+  const [isPresigning, setIsPresigning] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   // Date states
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -134,6 +139,54 @@ export default function PostPublishPage() {
     }));
   };
 
+  const uploadProjectImage = async (file: File) => {
+    setIsPresigning(true);
+    setIsUploading(false);
+    setUploadError(null);
+
+    try {
+      const payload = {
+        filename: file.name,
+        fileType: file.type,
+        type: "project",
+      };
+
+      const response = await api.post<{
+        success: boolean;
+        code: number;
+        message: string;
+        data: {
+          presignedUrl: string;
+          publicUrl: string;
+          key: string;
+        };
+      }>("/images/presigned", payload);
+
+      const { presignedUrl, publicUrl } = response.data;
+
+      setIsPresigning(false);
+      setIsUploading(true);
+
+      await fetch(presignedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+
+      handleInputChange("thumbnail", publicUrl);
+    } catch (error) {
+      console.error("Failed to upload project image", error);
+      setUploadError(
+        "이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해주세요."
+      );
+    } finally {
+      setIsPresigning(false);
+      setIsUploading(false);
+    }
+  };
+
   const handleAIAutoFill = async () => {
     if (!tagInputText.trim()) return;
 
@@ -200,6 +253,7 @@ export default function PostPublishPage() {
 
     const body = {
       name: post.title,
+      image: post.thumbnail,
       period: post.duration,
       personnel: post.teamSize,
       intent: post.goal,
@@ -335,11 +389,7 @@ export default function PostPublishPage() {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      handleInputChange("thumbnail", reader.result as string);
-                    };
-                    reader.readAsDataURL(file);
+                    uploadProjectImage(file);
                   }
                 }}
               />
@@ -357,7 +407,22 @@ export default function PostPublishPage() {
                   </span>
                 </div>
               )}
+              {(isPresigning || isUploading) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
+                    <span className="text-sm font-bold text-orange-500">
+                      {isPresigning ? "준비중..." : "업로드중..."}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
+            {uploadError && (
+              <p className="mt-2 text-center text-sm font-bold text-red-500">
+                {uploadError}
+              </p>
+            )}
           </div>
 
           {/* 1. Title */}

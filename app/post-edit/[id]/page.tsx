@@ -26,7 +26,9 @@ interface FailureData {
 interface ApiProjectDetail {
   name: string;
   user: string;
+  user_id: number;
   nickname: string;
+  image: string;
   period: string;
   personnel: number;
   intent: string;
@@ -47,6 +49,30 @@ export default function PostEditPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Fetch current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await api.get<
+          ApiResponse<{ user: { user_id: number } }>
+        >("/users/me");
+        if (response.success) {
+          setCurrentUserId(String(response.data.user.user_id));
+        }
+      } catch (error) {
+        console.error("Failed to fetch current user:", error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  // Image upload states
+  const [isPresigning, setIsPresigning] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // State for the post being edited
   const [post, setPost] = useState({
@@ -99,11 +125,11 @@ export default function PostEditPage() {
 
           setPost({
             title: data.name,
-            thumbnail: null,
+            thumbnail: data.image,
             duration: data.period,
             likes: 0,
             author: data.nickname,
-            authorId: data.user,
+            authorId: String(data.user_id),
             role: data.my_role,
             teamSize: data.personnel,
             tags: data.failure_category,
@@ -216,6 +242,54 @@ export default function PostEditPage() {
     }));
   };
 
+  const uploadProjectImage = async (file: File) => {
+    setIsPresigning(true);
+    setIsUploading(false);
+    setUploadError(null);
+
+    try {
+      const payload = {
+        filename: file.name,
+        fileType: file.type,
+        type: "project",
+      };
+
+      const response = await api.post<{
+        success: boolean;
+        code: number;
+        message: string;
+        data: {
+          presignedUrl: string;
+          publicUrl: string;
+          key: string;
+        };
+      }>("/images/presigned", payload);
+
+      const { presignedUrl, publicUrl } = response.data;
+
+      setIsPresigning(false);
+      setIsUploading(true);
+
+      await fetch(presignedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+
+      handleInputChange("thumbnail", publicUrl);
+    } catch (error) {
+      console.error("Failed to upload project image", error);
+      setUploadError(
+        "이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해주세요."
+      );
+    } finally {
+      setIsPresigning(false);
+      setIsUploading(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!post.title || !post.goal || !post.lessons) {
       alert("필수 항목을 모두 입력해주세요.");
@@ -242,6 +316,7 @@ export default function PostEditPage() {
     try {
       const payload = {
         name: post.title,
+        image: post.thumbnail,
         period: `${startDate} ~ ${endDate}`,
         personnel: post.teamSize,
         intent: post.goal,
@@ -278,6 +353,16 @@ export default function PostEditPage() {
     }
   };
 
+  // Check authorization
+  useEffect(() => {
+    if (!loading && currentUserId && post.authorId) {
+      if (currentUserId !== post.authorId) {
+        alert("수정 권한이 없습니다.");
+        router.push(`/post-detail/${id}`);
+      }
+    }
+  }, [loading, currentUserId, post.authorId, router, id]);
+
   return (
     <div className="min-h-screen bg-white text-zinc-900">
       <Navbar />
@@ -295,11 +380,7 @@ export default function PostEditPage() {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      handleInputChange("thumbnail", reader.result as string);
-                    };
-                    reader.readAsDataURL(file);
+                    uploadProjectImage(file);
                   }
                 }}
               />
@@ -317,7 +398,22 @@ export default function PostEditPage() {
                   </span>
                 </div>
               )}
+              {(isPresigning || isUploading) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
+                    <span className="text-sm font-bold text-orange-500">
+                      {isPresigning ? "준비중..." : "업로드중..."}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
+            {uploadError && (
+              <p className="mt-2 text-center text-sm font-bold text-red-500">
+                {uploadError}
+              </p>
+            )}
           </div>
 
           {/* 1. Title */}
