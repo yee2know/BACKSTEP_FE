@@ -35,6 +35,14 @@ export default function MainPage() {
               : "pointer-events-none -translate-y-4 opacity-0"
           }`}
         >
+          <div className="w-full max-w-md">
+            <input
+              type="text"
+              placeholder={searchType === "post" ? "글 검색" : "프로필 검색"}
+              className="w-full rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm focus:border-orange-500 focus:outline-none"
+            />
+          </div>
+
           {/* Nav Toggle */}
           <div className="flex gap-3">
             <button
@@ -53,14 +61,6 @@ export default function MainPage() {
             >
               프로필
             </button>
-          </div>
-
-          <div className="w-full max-w-md">
-            <input
-              type="text"
-              placeholder={searchType === "post" ? "글 검색" : "프로필 검색"}
-              className="w-full rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm focus:border-orange-500 focus:outline-none"
-            />
           </div>
         </div>
 
@@ -94,9 +94,25 @@ export default function MainPage() {
             isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
           }`}
         >
-          <div className="relative flex w-full max-w-2xl flex-col items-center">
+          <div className="relative flex w-full max-w-3xl items-center gap-6">
+            {/* Search Input */}
+            <div className="relative w-full flex-1">
+              <input
+                type="text"
+                placeholder={
+                  searchType === "post"
+                    ? "찾고 싶은 글을 검색해보세요"
+                    : "찾고 싶은 프로필을 검색해보세요"
+                }
+                className="h-16 w-full rounded-2xl border-2 border-orange-100 bg-white px-6 text-lg shadow-xl shadow-orange-500/5 focus:border-orange-500 focus:outline-none"
+              />
+              <button className="absolute right-3 top-1/2 h-10 -translate-y-1/2 rounded-xl bg-orange-500 px-6 font-bold text-white transition-all duration-300 hover:bg-orange-600">
+                검색
+              </button>
+            </div>
+
             {/* Search Type Toggle */}
-            <div className="mb-4 flex gap-4">
+            <div className="flex shrink-0 gap-4">
               <button
                 onClick={() => setSearchType("post")}
                 className={`text-lg font-bold transition-colors ${
@@ -112,22 +128,6 @@ export default function MainPage() {
                 }`}
               >
                 프로필
-              </button>
-            </div>
-
-            {/* Search Input */}
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder={
-                  searchType === "post"
-                    ? "찾고 싶은 글을 검색해보세요"
-                    : "찾고 싶은 프로필을 검색해보세요"
-                }
-                className="h-16 w-full rounded-2xl border-2 border-orange-100 bg-white px-6 text-lg shadow-xl shadow-orange-500/5 focus:border-orange-500 focus:outline-none"
-              />
-              <button className="absolute right-3 top-1/2 h-10 -translate-y-1/2 rounded-xl bg-orange-500 px-6 font-bold text-white transition-all duration-300 hover:bg-orange-600">
-                검색
               </button>
             </div>
           </div>
@@ -157,7 +157,7 @@ export default function MainPage() {
             <h2 className="mb-6 text-2xl font-bold text-zinc-800">
               주간 인기 글
             </h2>
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden">
               {Array.from({ length: 5 }).map((_, i) => (
                 <article
                   key={i}
@@ -185,7 +185,7 @@ export default function MainPage() {
           {/* Recent Posts */}
           <section>
             <h2 className="mb-6 text-2xl font-bold text-zinc-800">최근 글</h2>
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden">
               {Array.from({ length: 5 }).map((_, i) => (
                 <article
                   key={i}
