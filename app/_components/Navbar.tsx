@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { api, ApiResponse } from "../../lib/api";
 
 type NavbarProps = {
@@ -31,6 +31,8 @@ export function Navbar({
   // Profile dropdown & Balance state
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileInitial, setProfileInitial] = useState("U");
 
   // Use props if available, otherwise internal state
   const searchType = propSearchType || internalSearchType;
@@ -40,11 +42,31 @@ export function Navbar({
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await api.get<
-          ApiResponse<{ user: { money: number } }>
+        const meResponse = await api.get<
+          ApiResponse<{ user: { user_id: number; name: string; money: number } }>
         >("/users/me");
-        if (response.success) {
-          setBalance(response.data.user.money);
+
+        if (meResponse.success) {
+          setBalance(meResponse.data.user.money);
+          const userName = meResponse.data.user.name;
+          if (userName) {
+            setProfileInitial(userName.charAt(0).toUpperCase());
+          }
+
+          const detailResponse = await api.get<
+            ApiResponse<{ user: { profile_image: string | null; name: string } }>
+          >(`/users/${meResponse.data.user.user_id}`);
+
+          if (detailResponse.success) {
+            const imageUrl = detailResponse.data.user.profile_image;
+            if (imageUrl) {
+              setProfileImage(imageUrl);
+            } else if (detailResponse.data.user.name) {
+              setProfileInitial(
+                detailResponse.data.user.name.charAt(0).toUpperCase()
+              );
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to fetch user info", error);
@@ -165,10 +187,17 @@ export function Navbar({
           onClick={() => setIsProfileOpen(!isProfileOpen)}
           className="h-8 w-8 overflow-hidden rounded-full bg-zinc-200 transition-all hover:ring-2 hover:ring-orange-500 focus:outline-none"
         >
-          {/* Profile Image Placeholder */}
-          <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
-            U
-          </div>
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt="프로필 이미지"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
+              {profileInitial}
+            </div>
+          )}
         </button>
 
         {isProfileOpen && (
