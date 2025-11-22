@@ -91,29 +91,6 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Pagination state
-  const [recentPage, setRecentPage] = useState(1);
-  const [purchasedPage, setPurchasedPage] = useState(1);
-  const itemsPerPage = 2;
-
-  // Calculate pagination for Recent Posts
-  const indexOfLastRecentPost = recentPage * itemsPerPage;
-  const indexOfFirstRecentPost = indexOfLastRecentPost - itemsPerPage;
-  const currentRecentPosts = posts.slice(
-    indexOfFirstRecentPost,
-    indexOfLastRecentPost
-  );
-  const totalRecentPages = Math.ceil(posts.length / itemsPerPage);
-
-  // Calculate pagination for Purchased Posts
-  const indexOfLastPurchasedPost = purchasedPage * itemsPerPage;
-  const indexOfFirstPurchasedPost = indexOfLastPurchasedPost - itemsPerPage;
-  const currentPurchasedPosts = purchasedPosts.slice(
-    indexOfFirstPurchasedPost,
-    indexOfLastPurchasedPost
-  );
-  const totalPurchasedPages = Math.ceil(purchasedPosts.length / itemsPerPage);
-
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -237,23 +214,17 @@ export default function ProfilePage() {
             {/* Right Column: Recent Posts & Purchased Posts */}
             <div className="lg:col-span-9 space-y-16">
               {/* Section 1: Recent Posts */}
-              <div>
+              <div className="mb-3">
                 <div className="mb-8 flex items-center justify-between">
                   <h2 className="flex items-center gap-3 text-2xl font-bold text-zinc-900">
                     <span className="h-8 w-2 rounded-full bg-orange-500"></span>
                     최근 작성한 글
                   </h2>
-                  <Link
-                    href="/my-posts"
-                    className="text-sm font-bold text-zinc-400 hover:text-orange-500"
-                  >
-                    전체보기
-                  </Link>
                 </div>
 
-                <div className="space-y-6">
-                  {currentRecentPosts.length > 0 ? (
-                    currentRecentPosts.map((post) => (
+                <div className="space-y-6 max-h-[320px] overflow-y-auto pr-2 scrollbar-hide">
+                  {posts.length > 0 ? (
+                    posts.map((post) => (
                       <Link
                         href={`/post-detail/${post.project_id}`}
                         key={post.project_id}
@@ -322,66 +293,20 @@ export default function ProfilePage() {
                     </div>
                   )}
                 </div>
-
-                {/* Recent Posts Pagination */}
-                {totalRecentPages > 1 && (
-                  <div className="mt-6 flex justify-center gap-2">
-                    <button
-                      onClick={() => setRecentPage(Math.max(1, recentPage - 1))}
-                      disabled={recentPage === 1}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      &lt;
-                    </button>
-                    {Array.from(
-                      { length: totalRecentPages },
-                      (_, i) => i + 1
-                    ).map((number) => (
-                      <button
-                        key={number}
-                        onClick={() => setRecentPage(number)}
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
-                          recentPage === number
-                            ? "bg-orange-500 text-white shadow-md shadow-orange-500/20"
-                            : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-orange-500 hover:border-orange-200"
-                        }`}
-                      >
-                        {number}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() =>
-                        setRecentPage(
-                          Math.min(totalRecentPages, recentPage + 1)
-                        )
-                      }
-                      disabled={recentPage === totalRecentPages}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      &gt;
-                    </button>
-                  </div>
-                )}
               </div>
 
               {/* Section 2: Purchased Posts */}
               <div>
-                <div className="mb-8 flex items-center justify-between">
-                  <h2 className="flex items-center gap-3 text-2xl font-bold text-zinc-900">
+                <div className="flex items-center justify-between">
+                  <h2 className="mb-4 flex items-center gap-3 text-2xl font-bold text-zinc-900">
                     <span className="h-8 w-2 rounded-full bg-zinc-800"></span>
                     구매한 글
                   </h2>
-                  <Link
-                    href="/purchased-posts"
-                    className="text-sm font-bold text-zinc-400 hover:text-zinc-800"
-                  >
-                    전체보기
-                  </Link>
                 </div>
 
-                <div className="space-y-6">
-                  {currentPurchasedPosts.length > 0 ? (
-                    currentPurchasedPosts.map((post) => (
+                <div className="space-y-6 max-h-[320px] overflow-y-auto pr-2 scrollbar-hide">
+                  {purchasedPosts.length > 0 ? (
+                    purchasedPosts.map((post) => (
                       <Link
                         href={`/post-detail/${post.project_id}`}
                         key={post.project_id}
@@ -435,53 +360,10 @@ export default function ProfilePage() {
                     </div>
                   )}
                 </div>
-
-                {/* Purchased Posts Pagination */}
-                {totalPurchasedPages > 1 && (
-                  <div className="mt-6 flex justify-center gap-2">
-                    <button
-                      onClick={() =>
-                        setPurchasedPage(Math.max(1, purchasedPage - 1))
-                      }
-                      disabled={purchasedPage === 1}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      &lt;
-                    </button>
-                    {Array.from(
-                      { length: totalPurchasedPages },
-                      (_, i) => i + 1
-                    ).map((number) => (
-                      <button
-                        key={number}
-                        onClick={() => setPurchasedPage(number)}
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
-                          purchasedPage === number
-                            ? "bg-zinc-800 text-white shadow-md shadow-zinc-800/20"
-                            : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-800 hover:border-zinc-300"
-                        }`}
-                      >
-                        {number}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() =>
-                        setPurchasedPage(
-                          Math.min(totalPurchasedPages, purchasedPage + 1)
-                        )
-                      }
-                      disabled={purchasedPage === totalPurchasedPages}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      &gt;
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         </div>
-
       </main>
     </div>
   );
