@@ -1,51 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-const GOOGLE_LOGIN_URL = "https://ccscaps.com/api/auth/google";
+const GOOGLE_LOGIN_URL = "https://ccscaps.com/api/auth/google?state=local";
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter();
 
-  const letsgo = () => {};
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setStatusMessage("");
-    setErrorMessage("");
+    const currentUrl = new URL(window.location.href);
+    const token = currentUrl.searchParams.get("token");
+
+    if (!token) return;
 
     try {
-      const response = await fetch(GOOGLE_LOGIN_URL, {
-        credentials: "include",
-      });
+      localStorage.setItem("accessToken", token);
 
-      if (!response.ok) {
-        throw new Error("구글 로그인 요청이 실패했어요.");
-      }
+      currentUrl.searchParams.delete("token");
+      const cleanedSearch = currentUrl.searchParams.toString();
+      const cleanedUrl = `${currentUrl.origin}${currentUrl.pathname}${
+        cleanedSearch ? `?${cleanedSearch}` : ""
+      }${currentUrl.hash}`;
 
-      const result = await response.json();
-      const token = result?.data?.token;
-      const user = result?.data?.user;
-
-      if (!token) {
-        throw new Error("응답에 토큰이 없어요.");
-      }
-
-      localStorage.setItem("cistus_token", token);
-
-      if (user) {
-        localStorage.setItem("cistus_user", JSON.stringify(user));
-      }
-
-      setStatusMessage("구글 로그인에 성공했어요!");
-    } catch (error: any) {
-      setErrorMessage(error?.message || "로그인에 실패했어요.");
-    } finally {
-      setIsLoading(false);
+      window.history.replaceState({}, "", cleanedUrl);
+      router.replace("/");
+    } catch (error) {
+      console.error("토큰 저장 중 오류가 발생했습니다.", error);
     }
-  };
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-white text-zinc-900">
@@ -60,9 +45,8 @@ export default function LoginPage() {
         {/* Login Button */}
         <div className="flex flex-col items-center gap-4">
           <a
-            type="button"
             href={GOOGLE_LOGIN_URL}
-            className="flex items-center justify-center gap-3 w-60 h-12 bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer disabled:opacity-50"
+            className="flex items-center justify-center gap-3 w-60 h-12 bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
           >
             <svg
               width="18"
@@ -88,19 +72,8 @@ export default function LoginPage() {
                 fill="#EA4335"
               />
             </svg>
-            <span className="font-medium text-gray-700">
-              {isLoading ? "로그인 중..." : "Sign in with Google"}
-            </span>
+            <span className="font-medium text-gray-700">Sign in with Google</span>
           </a>
-
-          {statusMessage ? (
-            <p className="text-sm font-medium text-green-600">
-              {statusMessage}
-            </p>
-          ) : null}
-          {errorMessage ? (
-            <p className="text-sm font-medium text-red-500">{errorMessage}</p>
-          ) : null}
         </div>
       </main>
     </div>
