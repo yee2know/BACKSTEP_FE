@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const GOOGLE_LOGIN_URL = "https://ccscaps.com/api/auth/";
+const GOOGLE_LOGIN_URL = "https://ccscaps.com/api/auth/google";
 
 export default function LoginPage() {
   const router = useRouter();

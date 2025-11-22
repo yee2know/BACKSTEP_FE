@@ -61,6 +61,7 @@ interface ApiProjectDetail {
   price: number;
   helpful_count: number;
   is_helpful: boolean;
+  is_purchased: boolean;
   result_url: string;
   failure_category: string[];
   failure: Record<string, string[]>[];
@@ -143,7 +144,8 @@ export default function PostDetailPage() {
 
           // Set initial like state from API
           setIsLiked(data.is_helpful || false);
-          setIsUnlocked(visibility !== "paid" || data.price === 0);
+          // Unlock if: free post, or paid post that has been purchased
+          setIsUnlocked(visibility !== "paid" || data.is_purchased);
         } else {
           // Handle specific error codes
           if (response.code === 400) {
@@ -413,14 +415,14 @@ export default function PostDetailPage() {
               >
                 <HeartIcon
                   className={`h-7 w-7 transition-colors ${isLiked
-                      ? "text-orange-500 fill-orange-500"
-                      : "text-zinc-400 group-hover:text-orange-500 fill-transparent group-hover:fill-orange-500"
+                    ? "text-orange-500 fill-orange-500"
+                    : "text-zinc-400 group-hover:text-orange-500 fill-transparent group-hover:fill-orange-500"
                     }`}
                 />
                 <span
                   className={`mt-1 text-xs font-bold transition-colors ${isLiked
-                      ? "text-orange-600"
-                      : "text-zinc-500 group-hover:text-orange-600"
+                    ? "text-orange-600"
+                    : "text-zinc-500 group-hover:text-orange-600"
                     }`}
                 >
                   {post.likes}
