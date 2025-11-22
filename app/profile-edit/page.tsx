@@ -28,6 +28,7 @@ type UserDetailResponse = {
       name: string;
       nickname: string | null;
       email: string;
+      bio?: string | null;
       profile_image: string | null;
     };
   };
@@ -147,6 +148,7 @@ export default function ProfileEditPage() {
           ...prev,
           nickname: detail.nickname || detail.name || prev.nickname,
           email: detail.email,
+          bio: detail.bio ?? prev.bio,
         }));
 
         if (detail.profile_image) {
@@ -299,6 +301,7 @@ export default function ProfileEditPage() {
                   await api.patch("/users", {
                     nickname: user.nickname,
                     profile_image: uploadedInfo?.publicUrl ?? null,
+                    bio: user.bio,
                   });
 
                   setSuccessMessage("프로필이 성공적으로 저장되었습니다.");
