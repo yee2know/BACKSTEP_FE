@@ -10,6 +10,7 @@ import {
   PlusIcon,
   LinkIcon,
   ImageIcon,
+  UserIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -21,6 +22,7 @@ export default function PostEditPage() {
     duration: "2024.01.15 - 2024.03.20",
     likes: 128, // Likes are usually not editable by the user directly in this context, but kept for structure
     author: "Kim Developer",
+    role: "Frontend Developer",
     teamSize: 4,
     tags: ["Communication", "React", "Schedule Management"],
     visibility: "free", // private, free, paid
@@ -303,19 +305,32 @@ export default function PostEditPage() {
 
           {/* 2. Meta Info & Visibility Control Bar */}
           <div className="mb-8 flex flex-col gap-6 rounded-2xl bg-zinc-50 p-6 md:flex-row md:items-start md:justify-between">
-            {/* Left: Meta Info (Author, Team, Duration) */}
+            {/* Left: Meta Info (Role, Team, Duration) */}
             <div className="space-y-4">
-              {/* Author & Team */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-zinc-100">
-                  <div className="h-5 w-5 rounded-full bg-linear-to-br from-orange-400 to-orange-600" />
-                  <span className="text-sm font-bold text-zinc-700">
-                    {post.author}
-                  </span>
+              {/* Role */}
+              <div className="flex items-center gap-3 text-sm text-zinc-500">
+                <div className="flex items-center gap-2">
+                  <UserIcon className="h-4 w-4" />
+                  <span>나의 역할</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-zinc-500">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={post.role}
+                    onChange={(e) => handleInputChange("role", e.target.value)}
+                    placeholder="역할을 입력하세요"
+                    className="w-40 border-b border-zinc-300 bg-transparent text-center font-bold text-zinc-900 placeholder:text-zinc-300 focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Team Size */}
+              <div className="flex items-center gap-3 text-sm text-zinc-500">
+                <div className="flex items-center gap-2">
                   <UsersIcon className="h-4 w-4" />
                   <span>참여 인원</span>
+                </div>
+                <div className="flex items-center gap-2">
                   <input
                     type="number"
                     value={post.teamSize}
@@ -359,7 +374,6 @@ export default function PostEditPage() {
 
             {/* Right: Visibility */}
             <div className="flex flex-col items-end gap-3">
-              <span className="text-xs font-bold text-zinc-400">공개 설정</span>
               <div className="flex rounded-lg bg-white p-1 shadow-sm ring-1 ring-zinc-100">
                 {visibilityOptions.map((option) => (
                   <button
@@ -488,13 +502,13 @@ export default function PostEditPage() {
           {/* Topic 1: Goal */}
           <section>
             <h2 className="mb-4 text-xl font-bold text-orange-500">
-              1. 프로젝트 목표
+              1. 프로젝트 설명
             </h2>
             <textarea
               value={post.goal}
               onChange={(e) => handleInputChange("goal", e.target.value)}
               className="h-32 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-700 focus:border-orange-500 focus:outline-none"
-              placeholder="프로젝트의 목표를 작성해주세요."
+              placeholder="프로젝트의 설명을 작성해주세요."
             />
           </section>
 
