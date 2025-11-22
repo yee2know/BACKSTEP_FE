@@ -28,7 +28,7 @@ export default function PostPublishPage() {
     role: "",
     teamSize: 1,
     tags: [] as string[],
-    visibility: "free", // private, free, paid
+    visibility: "public", // private, public
     price: 0,
     resultLink: "",
     goal: "",
@@ -76,8 +76,7 @@ export default function PostPublishPage() {
 
   const visibilityOptions = [
     { id: "private", label: "비공개" },
-    { id: "free", label: "무료공개" },
-    { id: "paid", label: "유료공개" },
+    { id: "public", label: "공개" },
   ];
 
   // Handlers
@@ -251,6 +250,8 @@ export default function PostPublishPage() {
       return;
     }
 
+    const isPublic = post.visibility === "public";
+
     const body = {
       name: post.title,
       image: post.thumbnail,
@@ -258,13 +259,8 @@ export default function PostPublishPage() {
       personnel: post.teamSize,
       intent: post.goal,
       my_role: post.role,
-      sale_status:
-        post.visibility === "paid"
-          ? "ONSALE"
-          : post.visibility === "free"
-          ? "FREE"
-          : "NOTSALE",
-      is_free: post.visibility === "free",
+      sale_status: !isPublic ? "NOTSALE" : "ONSALE",
+      is_free: false,
       price: post.price,
       result_url: post.resultLink,
       failure_category: post.tags,
@@ -533,7 +529,7 @@ export default function PostPublishPage() {
                   </button>
                 ))}
               </div>
-              {post.visibility === "paid" && (
+              {post.visibility === "public" && (
                 <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
                   <input
                     type="number"
@@ -549,29 +545,27 @@ export default function PostPublishPage() {
               )}
 
               {/* Result Link Input */}
-              <div className="mt-2 flex w-full flex-col items-end gap-1">
-                <div className="flex w-full items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-zinc-100 transition-all focus-within:ring-orange-500">
-                  <LinkIcon className="h-4 w-4 text-zinc-400" />
-                  <input
-                    type="text"
-                    value={post.resultLink}
-                    onChange={(e) =>
-                      handleInputChange("resultLink", e.target.value)
-                    }
-                    placeholder={
-                      post.visibility === "private"
-                        ? "결과물 링크 (선택사항)"
-                        : "결과물 링크 (https://...)"
-                    }
-                    className="w-full bg-transparent text-sm font-medium text-zinc-900 placeholder:text-zinc-300 focus:outline-none disabled:cursor-not-allowed disabled:text-zinc-400"
-                  />
+              {post.visibility !== "private" && (
+                <div className="mt-2 flex w-full flex-col items-end gap-1">
+                  <div className="flex w-full items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-zinc-100 transition-all focus-within:ring-orange-500">
+                    <LinkIcon className="h-4 w-4 text-zinc-400" />
+                    <input
+                      type="text"
+                      value={post.resultLink}
+                      onChange={(e) =>
+                        handleInputChange("resultLink", e.target.value)
+                      }
+                      placeholder="결과물 링크 (https://...)"
+                      className="w-full bg-transparent text-sm font-medium text-zinc-900 placeholder:text-zinc-300 focus:outline-none disabled:cursor-not-allowed disabled:text-zinc-400"
+                    />
+                  </div>
+                  {post.visibility === "public" && (
+                    <span className="text-xs font-bold text-orange-500">
+                      * 구매자에게만 공개됩니다
+                    </span>
+                  )}
                 </div>
-                {post.visibility === "paid" && (
-                  <span className="text-xs font-bold text-orange-500">
-                    * 구매자에게만 공개됩니다
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
