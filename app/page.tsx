@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Navbar } from "./_components/Navbar";
 import { AVAILABLE_TAGS } from "../lib/tags";
 import { api, ApiResponse } from "../lib/api";
@@ -26,9 +27,45 @@ interface HelpfulProjectsResponse {
 }
 
 export default function MainPage() {
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchType, setSearchType] = useState<"post" | "profile">("post");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const executeSearch = (
+    query: string,
+    type: "post" | "profile",
+    categories: string[] = selectedTags
+  ) => {
+    const trimmed = query.trim();
+    const params = new URLSearchParams();
+    params.set("type", type);
+    if (trimmed) {
+      params.set("q", trimmed);
+    }
+    if (categories.length) {
+      const encodedCategories = categories
+        .map((tag) => encodeURIComponent(tag))
+        .join(",");
+      params.set("categories", encodedCategories);
+    }
+    router.push(`/search?${params.toString()}`);
+  };
+
+  const handleHeroSearch = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    executeSearch(searchQuery, searchType, selectedTags);
+  };
   
   // Helpful projects state
   const [allHelpfulProjects, setAllHelpfulProjects] = useState<HelpfulProject[]>([]);
@@ -194,6 +231,9 @@ export default function MainPage() {
         isScrolled={isScrolled}
         searchType={searchType}
         setSearchType={setSearchType}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onSearch={(query, type) => executeSearch(query, type, selectedTags)}
       />
 
       {/* Main Content Flow */}
@@ -215,7 +255,10 @@ export default function MainPage() {
             isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
           }`}
         >
-          <div className="relative w-full max-w-3xl">
+          <form
+            onSubmit={handleHeroSearch}
+            className="relative w-full max-w-3xl"
+          >
             <div className="absolute left-3 top-1/2 z-10 -translate-y-1/2">
               <button
                 type="button"
@@ -265,6 +308,8 @@ export default function MainPage() {
             </div>
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={
                 searchType === "post"
                   ? "찾고 싶은 글 내용을 검색해보세요"
@@ -274,24 +319,97 @@ export default function MainPage() {
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
               <SearchIcon className="h-6 w-6 text-zinc-400" />
-              <button className="h-10 rounded-xl bg-orange-500 px-6 font-bold text-white transition-all duration-300 hover:bg-orange-600">
+              <button
+                type="submit"
+                className="h-10 rounded-xl bg-orange-500 px-6 font-bold text-white transition-all duration-300 hover:bg-orange-600"
+              >
                 검색
               </button>
             </div>
-          </div>
+          </form>
 
           {/* Tags Section */}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {AVAILABLE_TAGS.slice(0, 5).map((tag) => (
-              <button
-                key={tag}
-                className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-orange-100 hover:text-orange-600"
-              >
-                #{tag}
-              </button>
-            ))}
+            {AVAILABLE_TAGS.slice(0, 5).map((tag) => {
+              const isSelected = selectedTags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggleTag(tag)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                    isSelected
+                      ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
+                      : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
+                  }`}
+                >
+                  #{tag}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setIsTagPickerOpen(true)}
+              className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-500 transition-colors hover:border-orange-300 hover:text-orange-500"
+            >
+              태그 더 보기
+            </button>
           </div>
         </div>
+        {isTagPickerOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-zinc-900">실패 태그 선택</h2>
+                <button
+                  type="button"
+                  onClick={() => setIsTagPickerOpen(false)}
+                  className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-500 hover:bg-zinc-200"
+                >
+                  닫기
+                </button>
+              </div>
+              <div className="mb-4 flex flex-wrap gap-2">
+                {AVAILABLE_TAGS.map((tag) => {
+                  const isSelected = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                        isSelected
+                          ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
+                          : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
+                      }`}
+                    >
+                      #{tag}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTags([])}
+                  className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-500 hover:border-zinc-400"
+                >
+                  선택 초기화
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTagPickerOpen(false);
+                    executeSearch(searchQuery, searchType, selectedTags);
+                  }}
+                  className="rounded-xl bg-orange-500 px-6 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-600"
+                >
+                  선택 후 검색
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Spacer to separate posts from the hero area visually */}
         <div className="h-24"></div>

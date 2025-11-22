@@ -9,12 +9,18 @@ type NavbarProps = {
   isScrolled?: boolean;
   searchType?: "post" | "profile";
   setSearchType?: (type: "post" | "profile") => void;
+  searchQuery?: string;
+  setSearchQuery?: (value: string) => void;
+  onSearch?: (query: string, type: "post" | "profile") => void | Promise<void>;
 };
 
 export function Navbar({
   isScrolled = false,
   searchType: propSearchType,
   setSearchType: propSetSearchType,
+  searchQuery: propSearchQuery,
+  setSearchQuery: propSetSearchQuery,
+  onSearch: propOnSearch,
 }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -25,7 +31,7 @@ export function Navbar({
   const [internalSearchType, setInternalSearchType] = useState<
     "post" | "profile"
   >("post");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [internalSearchQuery, setInternalSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Profile dropdown & Balance state
@@ -37,6 +43,8 @@ export function Navbar({
   // Use props if available, otherwise internal state
   const searchType = propSearchType || internalSearchType;
   const setSearchType = propSetSearchType || setInternalSearchType;
+  const searchQuery = propSearchQuery ?? internalSearchQuery;
+  const setSearchQuery = propSetSearchQuery ?? setInternalSearchQuery;
 
   // Fetch user balance on mount
   useEffect(() => {
@@ -80,15 +88,13 @@ export function Navbar({
     if (!searchQuery.trim()) return;
 
     try {
-      // TODO: Implement actual backend request here
-      // const response = await fetch('/api/search', { ... });
-      // const data = await response.json();
-
-      // Mocking backend response handling by navigating to search page
-      console.log(`Searching for ${searchQuery} in ${searchType}`);
-      router.push(
-        `/search?q=${encodeURIComponent(searchQuery)}&type=${searchType}`
-      );
+      if (propOnSearch) {
+        await propOnSearch(searchQuery, searchType);
+      } else {
+        router.push(
+          `/search?q=${encodeURIComponent(searchQuery)}&type=${searchType}`
+        );
+      }
     } catch (error) {
       console.error("Search failed", error);
     }
