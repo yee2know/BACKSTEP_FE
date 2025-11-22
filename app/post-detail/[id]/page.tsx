@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Navbar } from "../_components/Navbar";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { Navbar } from "../../_components/Navbar";
 import {
   CalendarIcon,
   UsersIcon,
@@ -14,59 +15,155 @@ import {
   LockIcon,
 } from "lucide-react";
 
-export default function PostDetailPage() {
-  // Mock Data
-  const post = {
-    title: "Cistus Project",
-    thumbnail: null as string | null, // In a real app, this would be a URL
-    duration: "2024.01.15 - 2024.03.20",
-    likes: 128,
-    author: "Kim Developer",
-    role: "Frontend Developer",
-    teamSize: 4,
-    tags: ["Communication", "React", "Schedule Management"],
-    visibility: "paid", // private, free, paid
-    price: 5000,
-    resultLink: "https://github.com/example/cistus",
-    goal: "To build a platform where developers can share their failures and learn from each other, turning setbacks into assets.",
-    failures: [
-      {
-        tag: "Communication",
-        question: "Communication 관련 가장 큰 어려움은 무엇이었나요?",
-        answer:
-          "We had a disconnect between the design team and the dev team regarding the feasibility of certain animations, leading to late-stage rework.",
-      },
-      {
-        tag: "React",
-        question: "React 관련 가장 큰 어려움은 무엇이었나요?",
-        answer:
-          "Managing complex global state without a proper library initially caused prop drilling hell. We had to refactor to use Zustand mid-project.",
-      },
-      {
-        tag: "Schedule Management",
-        question: "Schedule Management 관련 가장 큰 어려움은 무엇이었나요?",
-        answer:
-          "We underestimated the time required for QA and bug fixing, resulting in a 2-week delay in the final launch.",
-      },
-    ],
-    lessons:
-      "We learned that early communication between designers and developers is crucial. Also, setting up a solid state management strategy from day one saves a lot of time. Buffer time for QA is not optional.",
-  };
+import { TAG_DATA } from "../../../lib/tags";
+import { api, ApiResponse } from "../../../lib/api";
 
-  const [isUnlocked, setIsUnlocked] = useState(post.visibility !== "paid");
+interface FailureData {
+  tag: string;
+  questions: string[];
+  answers: string[];
+}
+
+interface PostData {
+  title: string;
+  thumbnail: string | null;
+  duration: string;
+  likes: number;
+  author: string;
+  authorId: string;
+  role: string;
+  teamSize: number;
+  tags: string[];
+  visibility: "private" | "free" | "paid";
+  price: number;
+  resultLink: string;
+  goal: string;
+  failures: FailureData[];
+  lessons: string;
+}
+
+interface ApiProjectDetail {
+  name: string;
+  user: string;
+  nickname: string;
+  period: string;
+  personnel: number;
+  intent: string;
+  my_role: string;
+  sale_status: string;
+  is_free: string | boolean;
+  price: number;
+  result_url: string;
+  failure_category: string[];
+  failure: Record<string, string[]>[];
+  growth_point: string;
+}
+
+export default function PostDetailPage() {
+  const params = useParams();
+  const id = params?.id as string;
+
+  const [post, setPost] = useState<PostData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchPost = async () => {
+      try {
+        const response = await api.get<ApiResponse<ApiProjectDetail>>(
+          `/projects/${id}`
+        );
+
+        if (response.success) {
+          const data = response.data;
+
+          // Map API data to UI state
+          const mappedFailures: FailureData[] = data.failure.map((item) => {
+            const tag = Object.keys(item)[0];
+            const answers = item[tag];
+            const questions = TAG_DATA[tag] || ["질문 1", "질문 2", "질문 3"];
+            return { tag, questions, answers };
+          });
+
+          const isFree = data.is_free === "true" || data.is_free === true;
+          const visibility = isFree
+            ? "free"
+            : data.sale_status === "SALE"
+            ? "paid"
+            : "private";
+
+          setPost({
+            title: data.name,
+            thumbnail: null, // API doesn't provide thumbnail yet
+            duration: data.period,
+            likes: 0, // API doesn't provide likes yet
+            author: data.nickname,
+            authorId: data.user,
+            role: data.my_role,
+            teamSize: data.personnel,
+            tags: data.failure_category,
+            visibility: visibility,
+            price: data.price,
+            resultLink: data.result_url,
+            goal: data.intent,
+            failures: mappedFailures,
+            lessons: data.growth_point,
+          });
+
+          setIsUnlocked(visibility !== "paid");
+        } else {
+          setError(response.message || "글을 불러오는데 실패했습니다.");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("서버 통신 중 오류가 발생했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
+  }, [id]);
 
   const handlePurchase = async () => {
+    if (!post) return;
+
     if (
       confirm(
         `${post.price.toLocaleString()} 포인트를 사용하여 열람하시겠습니까?`
       )
     ) {
       // TODO: Call backend API to deduct points and verify purchase
-      // await api.purchasePost(post.id);
+      // await api.purchasePost(id);
       alert("구매가 완료되었습니다.");
       setIsUnlocked(true);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  if (error || !post) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
+        <p className="text-zinc-500">{error || "글을 찾을 수 없습니다."}</p>
+        <button
+          onClick={() => window.history.back()}
+          className="px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-700"
+        >
+          뒤로 가기
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-zinc-900">
@@ -85,7 +182,7 @@ export default function PostDetailPage() {
               />
             </div>
           ) : (
-            <div className="mb-10 aspect-[21/9] w-full overflow-hidden rounded-3xl bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-100/50 flex items-center justify-center">
+            <div className="mb-10 aspect-21/9 w-full overflow-hidden rounded-3xl bg-linear-to-br from-orange-50 to-orange-100 border border-orange-100/50 flex items-center justify-center">
               <span className="text-orange-300 font-bold text-2xl">
                 썸네일 없음
               </span>
@@ -120,6 +217,21 @@ export default function PostDetailPage() {
           {/* 3. Meta Info Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 rounded-3xl bg-zinc-50/50 border border-zinc-100 p-8">
             <div className="space-y-6">
+              {/* Author */}
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm border border-zinc-100 text-zinc-400">
+                  <UserIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    작성자
+                  </p>
+                  <p className="font-bold text-zinc-900 text-lg">
+                    {post.author}
+                  </p>
+                </div>
+              </div>
+
               {/* Role */}
               <div className="flex items-center gap-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm border border-zinc-100 text-zinc-400">
@@ -211,7 +323,7 @@ export default function PostDetailPage() {
         <div className="space-y-20">
           {/* Topic 1: Goal */}
           <section className="relative">
-            <div className="absolute -left-4 top-0 h-full w-1 bg-gradient-to-b from-orange-500 to-orange-200 rounded-full opacity-20 md:-left-8"></div>
+            <div className="absolute -left-4 top-0 h-full w-1 bg-linear-to-b from-orange-500 to-orange-200 rounded-full opacity-20 md:-left-8"></div>
             <div className="flex items-center gap-3 mb-6">
               <QuoteIcon className="h-6 w-6 text-orange-500 fill-orange-500" />
               <h2 className="text-2xl font-black text-zinc-900">
@@ -246,12 +358,17 @@ export default function PostDetailPage() {
                       </span>
                     </div>
 
-                    <h3 className="mb-4 text-xl font-bold text-zinc-900">
-                      Q. {failure.question}
-                    </h3>
-
-                    <div className="rounded-2xl bg-zinc-50 p-6 text-lg leading-relaxed text-zinc-700 group-hover:bg-orange-50/30 transition-colors">
-                      {failure.answer}
+                    <div className="space-y-6">
+                      {failure.questions.map((question, qIndex) => (
+                        <div key={qIndex}>
+                          <h3 className="mb-2 text-lg font-bold text-zinc-900">
+                            Q. {question}
+                          </h3>
+                          <div className="rounded-2xl bg-zinc-50 p-6 text-lg leading-relaxed text-zinc-700 group-hover:bg-orange-50/30 transition-colors">
+                            {failure.answers[qIndex]}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>

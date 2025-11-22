@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navbar } from "./_components/Navbar";
+import { AVAILABLE_TAGS } from "../lib/tags";
 
 export default function MainPage() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -37,8 +38,9 @@ export default function MainPage() {
         {/* Hero Section (Scrolls naturally) */}
         <div className="mt-[20vh] mb-8 flex flex-col items-center px-4">
           <h1
-            className={`text-center text-5xl font-extrabold tracking-tight text-orange-500 sm:text-6xl transition-opacity duration-300 ${isScrolled ? "opacity-0" : "opacity-100"
-              }`}
+            className={`text-center text-5xl font-extrabold tracking-tight text-orange-500 sm:text-6xl transition-opacity duration-300 ${
+              isScrolled ? "opacity-0" : "opacity-100"
+            }`}
           >
             Cistus
           </h1>
@@ -46,8 +48,9 @@ export default function MainPage() {
 
         {/* Hero Search Container */}
         <div
-          className={`flex w-full flex-col items-center px-4 transition-opacity duration-300 ${isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
-            }`}
+          className={`flex w-full flex-col items-center px-4 transition-opacity duration-300 ${
+            isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
+          }`}
         >
           <div className="relative w-full max-w-3xl">
             <div className="absolute left-3 top-1/2 z-10 -translate-y-1/2">
@@ -58,8 +61,9 @@ export default function MainPage() {
               >
                 <span>{searchType === "post" ? "글" : "프로필"}</span>
                 <ChevronDownIcon
-                  className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
-                    }`}
+                  className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${
+                    isDropdownOpen ? "rotate-180" : ""
+                  }`}
                 />
               </button>
 
@@ -71,10 +75,11 @@ export default function MainPage() {
                       setSearchType("post");
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${searchType === "post"
+                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${
+                      searchType === "post"
                         ? "bg-orange-50 text-orange-600"
                         : "text-zinc-600 hover:bg-zinc-50"
-                      }`}
+                    }`}
                   >
                     글
                   </button>
@@ -84,10 +89,11 @@ export default function MainPage() {
                       setSearchType("profile");
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${searchType === "profile"
+                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${
+                      searchType === "profile"
                         ? "bg-orange-50 text-orange-600"
                         : "text-zinc-600 hover:bg-zinc-50"
-                      }`}
+                    }`}
                   >
                     프로필
                   </button>
@@ -113,16 +119,14 @@ export default function MainPage() {
 
           {/* Tags Section */}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {["#React", "#NextJS", "#Frontend", "#Design", "#Career"].map(
-              (tag) => (
-                <button
-                  key={tag}
-                  className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-orange-100 hover:text-orange-600"
-                >
-                  {tag}
-                </button>
-              )
-            )}
+            {AVAILABLE_TAGS.slice(0, 5).map((tag) => (
+              <button
+                key={tag}
+                className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-orange-100 hover:text-orange-600"
+              >
+                #{tag}
+              </button>
+            ))}
           </div>
         </div>
 
