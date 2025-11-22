@@ -39,6 +39,7 @@ export function Navbar({
   const [balance, setBalance] = useState<number | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [profileInitial, setProfileInitial] = useState("U");
+  const [profileName, setProfileName] = useState("User");
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Use props if available, otherwise internal state
@@ -52,28 +53,33 @@ export function Navbar({
     const fetchUser = async () => {
       try {
         const meResponse = await api.get<
-          ApiResponse<{ user: { user_id: number; name: string; money: number } }>
+          ApiResponse<{ user: { user_id: number; name: string; nickname: string | null; money: number } }>
         >("/users/me");
 
         if (meResponse.success) {
           setBalance(meResponse.data.user.money);
-          const userName = meResponse.data.user.name;
+          const userName = meResponse.data.user.nickname || meResponse.data.user.name;
           if (userName) {
+            setProfileName(userName);
             setProfileInitial(userName.charAt(0).toUpperCase());
           }
 
           const detailResponse = await api.get<
-            ApiResponse<{ user: { profile_image: string | null; name: string } }>
+            ApiResponse<{ user: { profile_image: string | null; name: string; nickname: string | null } }>
           >(`/users/${meResponse.data.user.user_id}`);
 
           if (detailResponse.success) {
             const imageUrl = detailResponse.data.user.profile_image;
             if (imageUrl) {
               setProfileImage(imageUrl);
-            } else if (detailResponse.data.user.name) {
-              setProfileInitial(
-                detailResponse.data.user.name.charAt(0).toUpperCase()
-              );
+            } else {
+              const detailName =
+                detailResponse.data.user.nickname ||
+                detailResponse.data.user.name;
+              if (detailName) {
+                setProfileName(detailName);
+                setProfileInitial(detailName.charAt(0).toUpperCase());
+              }
             }
           }
         }
@@ -206,22 +212,29 @@ export function Navbar({
       </div>
 
       {/* Right: Profile */}
-      <div className="relative flex items-center gap-4" ref={profileMenuRef}>
+      <div className="relative flex items-center gap-3" ref={profileMenuRef}>
         <button
           onClick={() => setIsProfileOpen(!isProfileOpen)}
-          className="h-8 w-8 overflow-hidden rounded-full bg-zinc-200 transition-all hover:ring-2 hover:ring-orange-500 focus:outline-none"
+          className="flex items-center gap-3 rounded-full border border-zinc-100 bg-white/80 px-3 py-1.5 transition-all hover:border-orange-200 hover:bg-white focus:outline-none"
         >
-          {profileImage ? (
-            <img
-              src={profileImage}
-              alt="프로필 이미지"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
-              {profileInitial}
-            </div>
-          )}
+          <div className="h-8 w-8 overflow-hidden rounded-full bg-zinc-200">
+            {profileImage ? (
+              <img
+                src={profileImage}
+                alt="프로필 이미지"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
+                {profileInitial}
+              </div>
+            )}
+          </div>
+          <div className="hidden lg:flex flex-col items-start text-left leading-tight">
+            <span className="text-base font-bold text-zinc-800">
+              {profileName}
+            </span>
+          </div>
         </button>
 
         {isProfileOpen && (
