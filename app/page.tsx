@@ -6,6 +6,7 @@ import { Navbar } from "./_components/Navbar";
 export default function MainPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchType, setSearchType] = useState<"post" | "profile">("post");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,9 +36,8 @@ export default function MainPage() {
         {/* Hero Section (Scrolls naturally) */}
         <div className="mt-[20vh] mb-8 flex flex-col items-center px-4">
           <h1
-            className={`text-center text-5xl font-extrabold tracking-tight text-orange-500 sm:text-6xl transition-opacity duration-300 ${
-              isScrolled ? "opacity-0" : "opacity-100"
-            }`}
+            className={`text-center text-5xl font-extrabold tracking-tight text-orange-500 sm:text-6xl transition-opacity duration-300 ${isScrolled ? "opacity-0" : "opacity-100"
+              }`}
           >
             Cistus
           </h1>
@@ -45,44 +45,67 @@ export default function MainPage() {
 
         {/* Hero Search Container */}
         <div
-          className={`flex w-full flex-col items-center px-4 transition-opacity duration-300 ${
-            isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
+          className={`flex w-full flex-col items-center px-4 transition-opacity duration-300 ${isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
+            }`}
         >
-          <div className="relative flex w-full max-w-3xl items-center gap-6">
-            {/* Search Input */}
-            <div className="relative w-full flex-1">
-              <input
-                type="text"
-                placeholder={
-                  searchType === "post"
-                    ? "찾고 싶은 글을 검색해보세요"
-                    : "찾고 싶은 프로필을 검색해보세요"
-                }
-                className="h-16 w-full rounded-2xl border-2 border-orange-100 bg-white px-6 text-lg shadow-xl shadow-orange-500/5 focus:border-orange-500 focus:outline-none"
-              />
-              <button className="absolute right-3 top-1/2 h-10 -translate-y-1/2 rounded-xl bg-orange-500 px-6 font-bold text-white transition-all duration-300 hover:bg-orange-600">
-                검색
+          <div className="relative w-full max-w-3xl">
+            <div className="absolute left-3 top-1/2 z-10 -translate-y-1/2">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-2 rounded-xl px-4 py-2 text-base font-bold text-zinc-600 hover:bg-zinc-100 transition-colors"
+              >
+                <span>{searchType === "post" ? "글" : "프로필"}</span>
+                <ChevronDownIcon
+                  className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
+                    }`}
+                />
               </button>
-            </div>
 
-            {/* Search Type Toggle */}
-            <div className="flex shrink-0 gap-4">
-              <button
-                onClick={() => setSearchType("post")}
-                className={`text-lg font-bold transition-colors ${
-                  searchType === "post" ? "text-zinc-900" : "text-zinc-400"
-                }`}
-              >
-                글
-              </button>
-              <button
-                onClick={() => setSearchType("profile")}
-                className={`text-lg font-bold transition-colors ${
-                  searchType === "profile" ? "text-zinc-900" : "text-zinc-400"
-                }`}
-              >
-                프로필
+              {isDropdownOpen && (
+                <div className="absolute left-0 top-full mt-2 w-32 overflow-hidden rounded-xl border border-zinc-100 bg-white p-1 shadow-lg ring-1 ring-black/5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchType("post");
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${searchType === "post"
+                        ? "bg-orange-50 text-orange-600"
+                        : "text-zinc-600 hover:bg-zinc-50"
+                      }`}
+                  >
+                    글
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchType("profile");
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${searchType === "profile"
+                        ? "bg-orange-50 text-orange-600"
+                        : "text-zinc-600 hover:bg-zinc-50"
+                      }`}
+                  >
+                    프로필
+                  </button>
+                </div>
+              )}
+            </div>
+            <input
+              type="text"
+              placeholder={
+                searchType === "post"
+                  ? "찾고 싶은 글 내용을 검색해보세요"
+                  : "찾고 싶은 프로필을 검색해보세요"
+              }
+              className="h-16 w-full rounded-2xl border-2 border-orange-100 bg-white pl-32 pr-32 text-lg shadow-xl shadow-orange-500/5 focus:border-orange-500 focus:outline-none transition-all"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+              <SearchIcon className="h-6 w-6 text-zinc-400" />
+              <button className="h-10 rounded-xl bg-orange-500 px-6 font-bold text-white transition-all duration-300 hover:bg-orange-600">
+                검색
               </button>
             </div>
           </div>
@@ -165,5 +188,40 @@ export default function MainPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
   );
 }
