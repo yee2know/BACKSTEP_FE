@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "../_components/Navbar";
 import { AVAILABLE_TAGS } from "../../lib/tags";
@@ -42,7 +42,7 @@ interface SearchApiData {
 
 type FilterType = "all" | "private" | "free" | "paid";
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -422,6 +422,20 @@ export default function SearchPage() {
         </section>
       </main>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white text-zinc-400">
+          검색 페이지를 불러오는 중입니다...
+        </div>
+      }
+    >
+      <SearchPageContent />
+    </Suspense>
   );
 }
 
