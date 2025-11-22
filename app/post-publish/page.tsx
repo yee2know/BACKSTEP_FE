@@ -13,6 +13,7 @@ import {
   UserIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { api } from "../../lib/api";
 
 export default function PostPublishPage() {
   // State for the new post
@@ -145,6 +146,39 @@ export default function PostPublishPage() {
       console.error("Failed to get AI recommendations", error);
     } finally {
       setIsRecommending(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    const body = {
+      name: post.title,
+      period: post.duration,
+      personnel: post.teamSize,
+      intent: post.goal,
+      my_role: post.role,
+      sale_status: post.visibility === "paid" ? "SALE" : "NOTSALE",
+      is_free: post.visibility === "free",
+      price: post.price,
+      result_url: post.resultLink,
+      failure_category: post.tags,
+      failure: post.failures.map((f) => ({ [f.tag]: [f.question, f.answer] })),
+      growth_point: post.lessons,
+    };
+
+    try {
+      const data = await api.post("/projects", body);
+
+      if (data.success) {
+        alert(data.message || "게시글이 성공적으로 등록되었습니다.");
+        window.location.href = "/";
+      } else {
+        alert(`오류 발생: ${data.message} (Code: ${data.code})`);
+      }
+    } catch (error) {
+      console.error("Publish error:", error);
+      if (error instanceof Error && error.message !== "Unauthorized") {
+        alert("게시 중 오류가 발생했습니다.");
+      }
     }
   };
 
@@ -559,7 +593,10 @@ export default function PostPublishPage() {
 
         {/* Save Button (Moved to Bottom) */}
         <div className="mt-12 flex justify-end border-t border-zinc-100 pt-8">
-          <button className="flex items-center gap-2 rounded-lg bg-zinc-900 px-8 py-3 text-base font-bold text-white transition-colors hover:bg-zinc-700">
+          <button
+            onClick={handlePublish}
+            className="flex items-center gap-2 rounded-lg bg-zinc-900 px-8 py-3 text-base font-bold text-white transition-colors hover:bg-zinc-700"
+          >
             <SaveIcon className="h-5 w-5" />
             게시하기
           </button>
