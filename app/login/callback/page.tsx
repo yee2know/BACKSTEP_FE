@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginCallbackPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+
+  const token = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.get("token");
+  }, []);
 
   useEffect(() => {
     if (!token) {
