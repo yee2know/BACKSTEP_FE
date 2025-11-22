@@ -1,4 +1,4 @@
-import { PageScaffold } from "./_components/PageScaffold";
+import { PageScaffold } from "../_components/PageScaffold";
 
 export default function MainPage() {
   return (
