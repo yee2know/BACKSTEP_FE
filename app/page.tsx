@@ -15,6 +15,7 @@ interface HelpfulProject {
   period: string;
   sale_status: string;
   is_free: string | boolean;
+  helpful_count: number;
   price: number;
   failure_catagory: string[];
 }
@@ -414,16 +415,22 @@ export default function MainPage() {
                             <span>•</span>
                             <span>{project.period}</span>
                           </div>
-                          <div className="mt-2 flex items-center gap-2">
-                            {project.is_free === "true" || project.is_free === true ? (
-                              <span className="text-xs font-bold text-green-600">무료</span>
-                            ) : project.sale_status === "SALE" ? (
-                              <span className="text-xs font-bold text-orange-600">
-                                ₩{project.price.toLocaleString()}
-                              </span>
-                            ) : (
-                              <span className="text-xs font-bold text-zinc-400">비공개</span>
-                            )}
+                          <div className="mt-2 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {project.is_free === "true" || project.is_free === true ? (
+                                <span className="text-xs font-bold text-green-600">무료</span>
+                              ) : project.sale_status === "SALE" ? (
+                                <span className="text-xs font-bold text-orange-600">
+                                  ₩{project.price.toLocaleString()}
+                                </span>
+                              ) : (
+                                <span className="text-xs font-bold text-zinc-400">비공개</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs font-medium text-zinc-500">
+                              <HeartIcon className="h-3.5 w-3.5 text-orange-500 fill-orange-500" />
+                              <span>{project.helpful_count || 0}</span>
+                            </div>
                           </div>
                         </div>
                         </Link>
