@@ -43,9 +43,17 @@ export default function ProfilePage() {
                 {/* Edit Button */}
                 <Link
                   href="/profile-edit"
-                  className="mb-8 flex w-full items-center justify-center rounded-xl border-2 border-zinc-200 bg-white py-3 font-bold text-zinc-700 transition-all hover:border-orange-500 hover:text-orange-500 hover:shadow-lg hover:shadow-orange-500/10"
+                  className="mb-4 flex w-full items-center justify-center rounded-xl border-2 border-zinc-200 bg-white py-3 font-bold text-zinc-700 transition-all hover:border-orange-500 hover:text-orange-500 hover:shadow-lg hover:shadow-orange-500/10"
                 >
                   프로필 편집
+                </Link>
+
+                {/* Write Post Button */}
+                <Link
+                  href="/post-publish"
+                  className="mb-8 flex w-full items-center justify-center rounded-xl bg-orange-500 py-3 font-bold text-white transition-all hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20"
+                >
+                  글 쓰기
                 </Link>
               </div>
             </div>
