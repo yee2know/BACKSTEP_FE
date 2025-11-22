@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const GOOGLE_LOGIN_URL = "https://ccscaps.com/api/auth/google?state=local";
+const GOOGLE_LOGIN_URL = "https://ccscaps.com/api/auth/";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,9 +21,8 @@ export default function LoginPage() {
 
       currentUrl.searchParams.delete("token");
       const cleanedSearch = currentUrl.searchParams.toString();
-      const cleanedUrl = `${currentUrl.origin}${currentUrl.pathname}${
-        cleanedSearch ? `?${cleanedSearch}` : ""
-      }${currentUrl.hash}`;
+      const cleanedUrl = `${currentUrl.origin}${currentUrl.pathname}${cleanedSearch ? `?${cleanedSearch}` : ""
+        }${currentUrl.hash}`;
 
       window.history.replaceState({}, "", cleanedUrl);
       router.replace("/");
