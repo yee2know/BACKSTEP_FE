@@ -26,7 +26,9 @@ interface FailureData {
 interface ApiProjectDetail {
   name: string;
   user: string;
+  user_id: number;
   nickname: string;
+  image: string;
   period: string;
   personnel: number;
   intent: string;
@@ -47,6 +49,30 @@ export default function PostEditPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Fetch current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await api.get<
+          ApiResponse<{ user: { user_id: number } }>
+        >("/users/me");
+        if (response.success) {
+          setCurrentUserId(String(response.data.user.user_id));
+        }
+      } catch (error) {
+        console.error("Failed to fetch current user:", error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  // Image upload states
+  const [isPresigning, setIsPresigning] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // State for the post being edited
   const [post, setPost] = useState({
@@ -99,11 +125,11 @@ export default function PostEditPage() {
 
           setPost({
             title: data.name,
-            thumbnail: null,
+            thumbnail: data.image,
             duration: data.period,
             likes: 0,
             author: data.nickname,
-            authorId: data.user,
+            authorId: String(data.user_id),
             role: data.my_role,
             teamSize: data.personnel,
             tags: data.failure_category,
@@ -141,9 +167,6 @@ export default function PostEditPage() {
   }, [id, router]);
 
   const [newTag, setNewTag] = useState("");
-  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
-  const [tagInputText, setTagInputText] = useState("");
-  const [isRecommending, setIsRecommending] = useState(false);
 
   // Date states
   const [startDate, setStartDate] = useState("2024.01.15");
@@ -219,50 +242,51 @@ export default function PostEditPage() {
     }));
   };
 
-  const handleAIAutoFill = async () => {
-    if (!tagInputText.trim()) return;
+  const uploadProjectImage = async (file: File) => {
+    setIsPresigning(true);
+    setIsUploading(false);
+    setUploadError(null);
 
-    setIsRecommending(true);
     try {
-      // Mock backend request
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const payload = {
+        filename: file.name,
+        fileType: file.type,
+        type: "project",
+      };
 
-      // Mock response: Recommend random tags, goal, and failures
-      const recommendedTags = AVAILABLE_TAGS.sort(
-        () => 0.5 - Math.random()
-      ).slice(0, 3);
+      const response = await api.post<{
+        success: boolean;
+        code: number;
+        message: string;
+        data: {
+          presignedUrl: string;
+          publicUrl: string;
+          key: string;
+        };
+      }>("/images/presigned", payload);
 
-      const mockGoal =
-        "AI가 분석한 프로젝트 목표: 효율적인 협업과 기술적 도전을 통해 성장하는 것을 목표로 했습니다.";
+      const { presignedUrl, publicUrl } = response.data;
 
-      const mockFailures = recommendedTags.map((tag: string) => ({
-        tag: tag,
-        questions: TAG_DATA[tag] || [
-          `${tag} 관련 가장 큰 어려움은 무엇이었나요?`,
-          "해결 과정은 어땠나요?",
-          "배운 점은 무엇인가요?",
-        ],
-        answers: [
-          `AI가 분석한 ${tag} 관련 실패 경험: 초기 설계 미흡으로 인한 재작업 발생.`,
-          "팀원들과의 긴밀한 소통으로 해결.",
-          "초기 기획의 중요성을 깨달음.",
-        ],
-      }));
+      setIsPresigning(false);
+      setIsUploading(true);
 
-      // Update state
-      setPost((prev) => ({
-        ...prev,
-        tags: [...new Set([...prev.tags, ...recommendedTags])],
-        goal: mockGoal,
-        failures: mockFailures,
-      }));
+      await fetch(presignedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
 
-      setIsTagModalOpen(false);
-      setTagInputText("");
+      handleInputChange("thumbnail", publicUrl);
     } catch (error) {
-      console.error("Failed to get AI recommendations", error);
+      console.error("Failed to upload project image", error);
+      setUploadError(
+        "이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해주세요."
+      );
     } finally {
-      setIsRecommending(false);
+      setIsPresigning(false);
+      setIsUploading(false);
     }
   };
 
@@ -292,6 +316,7 @@ export default function PostEditPage() {
     try {
       const payload = {
         name: post.title,
+        image: post.thumbnail,
         period: `${startDate} ~ ${endDate}`,
         personnel: post.teamSize,
         intent: post.goal,
@@ -328,90 +353,19 @@ export default function PostEditPage() {
     }
   };
 
+  // Check authorization
+  useEffect(() => {
+    if (!loading && currentUserId && post.authorId) {
+      if (currentUserId !== post.authorId) {
+        alert("수정 권한이 없습니다.");
+        router.push(`/post-detail/${id}`);
+      }
+    }
+  }, [loading, currentUserId, post.authorId, router, id]);
+
   return (
     <div className="min-h-screen bg-white text-zinc-900">
       <Navbar />
-
-      {/* AI Auto-Fill Modal */}
-      {isTagModalOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white p-8 shadow-2xl">
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="rounded-full bg-orange-100 p-2">
-                  <SparklesIcon className="h-6 w-6 text-orange-500" />
-                </div>
-                <h3 className="text-2xl font-bold text-zinc-900">
-                  AI 프로젝트 회고 작성
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsTagModalOpen(false)}
-                className="rounded-full p-2 hover:bg-zinc-100"
-              >
-                <XIcon className="h-6 w-6 text-zinc-500" />
-              </button>
-            </div>
-
-            <div className="mb-6 space-y-2 rounded-xl bg-orange-50 p-4 text-sm text-orange-800">
-              <p className="font-bold">
-                💡 AI가 다음 내용을 자동으로 작성해드립니다:
-              </p>
-              <ul className="list-inside list-disc space-y-1 ml-2">
-                <li>
-                  프로젝트 성격에 맞는{" "}
-                  <span className="font-bold">태그 추천</span>
-                </li>
-                <li>
-                  핵심 내용을 요약한{" "}
-                  <span className="font-bold">프로젝트 목표</span>
-                </li>
-                <li>
-                  태그별{" "}
-                  <span className="font-bold">실패 경험 및 회고 질문</span>
-                </li>
-              </ul>
-            </div>
-
-            <textarea
-              value={tagInputText}
-              onChange={(e) => setTagInputText(e.target.value)}
-              placeholder="프로젝트에서 겪었던 경험, 어려움, 배운 점 등을 자유롭게 작성해주세요. 자세히 적을수록 더 정확한 회고가 생성됩니다..."
-              className="mb-8 h-60 w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 p-6 text-base leading-relaxed focus:border-orange-500 focus:outline-none"
-            />
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setIsTagModalOpen(false)}
-                className="rounded-xl px-6 py-3 text-base font-bold text-zinc-500 hover:bg-zinc-100"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleAIAutoFill}
-                disabled={!tagInputText.trim() || isRecommending}
-                className={`flex items-center gap-2 rounded-xl bg-orange-500 px-8 py-3 text-base font-bold text-white transition-all ${
-                  !tagInputText.trim() || isRecommending
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20"
-                }`}
-              >
-                {isRecommending ? (
-                  <>
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    AI가 회고를 분석하고 작성중입니다...
-                  </>
-                ) : (
-                  <>
-                    <SparklesIcon className="h-5 w-5" />
-                    AI로 회고 자동 작성하기
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <main className="mx-auto max-w-3xl px-6 pt-24 pb-20">
         {/* Header Section */}
@@ -426,11 +380,7 @@ export default function PostEditPage() {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      handleInputChange("thumbnail", reader.result as string);
-                    };
-                    reader.readAsDataURL(file);
+                    uploadProjectImage(file);
                   }
                 }}
               />
@@ -448,7 +398,22 @@ export default function PostEditPage() {
                   </span>
                 </div>
               )}
+              {(isPresigning || isUploading) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
+                    <span className="text-sm font-bold text-orange-500">
+                      {isPresigning ? "준비중..." : "업로드중..."}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
+            {uploadError && (
+              <p className="mt-2 text-center text-sm font-bold text-red-500">
+                {uploadError}
+              </p>
+            )}
           </div>
 
           {/* 1. Title */}
@@ -600,16 +565,6 @@ export default function PostEditPage() {
               </div>
             </div>
           </div>
-
-          {/* 3. AI Button */}
-          <button
-            onClick={() => setIsTagModalOpen(true)}
-            className="group relative mb-6 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-linear-to-br from-orange-500 to-orange-600 py-3 text-base font-bold text-white shadow-md shadow-orange-500/20 transition-all hover:scale-[1.01] hover:shadow-orange-500/30"
-          >
-            <div className="absolute inset-0 bg-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
-            <SparklesIcon className="h-5 w-5 animate-pulse" />
-            <span>AI로 회고 자동 작성하기</span>
-          </button>
 
           {/* 4. Tags */}
           <div className="flex flex-col gap-3">

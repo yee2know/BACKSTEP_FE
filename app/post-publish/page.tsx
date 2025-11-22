@@ -16,6 +16,7 @@ import {
 import { motion } from "framer-motion";
 import { api, ApiResponse } from "../../lib/api";
 import { TAG_DATA, AVAILABLE_TAGS } from "../../lib/tags";
+import { generateRetrospective } from "../../lib/gemini";
 
 export default function PostPublishPage() {
   // State for the new post
@@ -40,6 +41,11 @@ export default function PostPublishPage() {
   const [tagInputText, setTagInputText] = useState("");
   const [isRecommending, setIsRecommending] = useState(false);
   const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
+
+  // Image upload states
+  const [isPresigning, setIsPresigning] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Date states
   const [startDate, setStartDate] = useState("");
@@ -133,48 +139,96 @@ export default function PostPublishPage() {
     }));
   };
 
+  const uploadProjectImage = async (file: File) => {
+    setIsPresigning(true);
+    setIsUploading(false);
+    setUploadError(null);
+
+    try {
+      const payload = {
+        filename: file.name,
+        fileType: file.type,
+        type: "project",
+      };
+
+      const response = await api.post<{
+        success: boolean;
+        code: number;
+        message: string;
+        data: {
+          presignedUrl: string;
+          publicUrl: string;
+          key: string;
+        };
+      }>("/images/presigned", payload);
+
+      const { presignedUrl, publicUrl } = response.data;
+
+      setIsPresigning(false);
+      setIsUploading(true);
+
+      await fetch(presignedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+
+      handleInputChange("thumbnail", publicUrl);
+    } catch (error) {
+      console.error("Failed to upload project image", error);
+      setUploadError(
+        "이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해주세요."
+      );
+    } finally {
+      setIsPresigning(false);
+      setIsUploading(false);
+    }
+  };
+
   const handleAIAutoFill = async () => {
     if (!tagInputText.trim()) return;
 
     setIsRecommending(true);
     try {
-      // Mock backend request
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const aiData = await generateRetrospective(tagInputText);
 
-      // Mock response: Recommend random tags, goal, and failures
-      const recommendedTags = AVAILABLE_TAGS.sort(
-        () => 0.5 - Math.random()
-      ).slice(0, 3);
+      const newFailures = aiData.tags.map((tag: string) => {
+        const qa = aiData[tag] || {};
+        const questions = Object.keys(qa);
+        const answers = Object.values(qa) as string[];
 
-      const mockGoal =
-        "AI가 분석한 프로젝트 목표: 효율적인 협업과 기술적 도전을 통해 성장하는 것을 목표로 했습니다.";
+        // Fallback if questions/answers are missing or don't match expected format
+        if (questions.length === 0) {
+          const defaultQuestions = TAG_DATA[tag] || ["질문1", "질문2", "질문3"];
+          return {
+            tag,
+            questions: defaultQuestions,
+            answers: ["", "", ""],
+          };
+        }
 
-      const mockFailures = recommendedTags.map((tag) => ({
-        tag: tag,
-        questions: TAG_DATA[tag] || [
-          `${tag} 관련 가장 큰 어려움은 무엇이었나요?`,
-          "해결 과정은 어땠나요?",
-          "배운 점은 무엇인가요?",
-        ],
-        answers: [
-          `AI가 분석한 ${tag} 관련 실패 경험: 초기 설계 미흡으로 인한 재작업 발생.`,
-          "팀원들과의 긴밀한 소통으로 해결.",
-          "초기 기획의 중요성을 깨달음.",
-        ],
-      }));
+        return {
+          tag,
+          questions,
+          answers,
+        };
+      });
 
       // Update state
       setPost((prev) => ({
         ...prev,
-        tags: [...new Set([...prev.tags, ...recommendedTags])],
-        goal: mockGoal,
-        failures: mockFailures,
+        tags: [...new Set([...prev.tags, ...aiData.tags])],
+        // goal: mockGoal, // Removed as it's not in the new AI response
+        failures: newFailures,
       }));
 
       setIsTagModalOpen(false);
       setTagInputText("");
     } catch (error) {
       console.error("Failed to get AI recommendations", error);
+      alert("AI 회고 생성 중 오류가 발생했습니다.");
     } finally {
       setIsRecommending(false);
     }
@@ -199,6 +253,7 @@ export default function PostPublishPage() {
 
     const body = {
       name: post.title,
+      image: post.thumbnail,
       period: post.duration,
       personnel: post.teamSize,
       intent: post.goal,
@@ -334,11 +389,7 @@ export default function PostPublishPage() {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      handleInputChange("thumbnail", reader.result as string);
-                    };
-                    reader.readAsDataURL(file);
+                    uploadProjectImage(file);
                   }
                 }}
               />
@@ -356,7 +407,22 @@ export default function PostPublishPage() {
                   </span>
                 </div>
               )}
+              {(isPresigning || isUploading) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
+                    <span className="text-sm font-bold text-orange-500">
+                      {isPresigning ? "준비중..." : "업로드중..."}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
+            {uploadError && (
+              <p className="mt-2 text-center text-sm font-bold text-red-500">
+                {uploadError}
+              </p>
+            )}
           </div>
 
           {/* 1. Title */}
