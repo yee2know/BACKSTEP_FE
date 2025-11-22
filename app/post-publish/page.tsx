@@ -11,6 +11,7 @@ import {
   LinkIcon,
   ImageIcon,
   UserIcon,
+  ChevronDownIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "../../lib/api";
@@ -37,6 +38,7 @@ export default function PostPublishPage() {
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const [tagInputText, setTagInputText] = useState("");
   const [isRecommending, setIsRecommending] = useState(false);
+  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
 
   // Date states
   const [startDate, setStartDate] = useState("");
@@ -46,6 +48,24 @@ export default function PostPublishPage() {
   useEffect(() => {
     setPost((prev) => ({ ...prev, duration: `${startDate} - ${endDate}` }));
   }, [startDate, endDate]);
+
+  // Close tag dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (isTagDropdownOpen && !target.closest('.tag-dropdown-container')) {
+        setIsTagDropdownOpen(false);
+      }
+    };
+
+    if (isTagDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isTagDropdownOpen]);
 
   const visibilityOptions = [
     { id: "private", label: "비공개" },
@@ -484,27 +504,44 @@ export default function PostPublishPage() {
                   </button>
                 </span>
               ))}
-              <div className="relative group">
-                <button className="flex items-center gap-1 rounded-full bg-white px-4 py-1.5 text-sm font-bold text-zinc-400 ring-1 ring-zinc-200 transition-all group-hover:bg-zinc-50 group-hover:text-zinc-600 group-hover:ring-zinc-300">
-                  <PlusIcon className="h-3.5 w-3.5" />
-                  <span>태그 추가</span>
-                </button>
-                <select
-                  value=""
-                  onChange={(e) => {
-                    addTag(e.target.value);
-                  }}
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              <div className="relative tag-dropdown-container">
+                <button
+                  type="button"
+                  onClick={() => setIsTagDropdownOpen(!isTagDropdownOpen)}
+                  className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-base font-bold text-zinc-600 shadow-sm ring-1 ring-zinc-200 transition-all hover:bg-zinc-50 hover:shadow-md hover:ring-zinc-300 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  <option value="">태그 추가</option>
-                  {AVAILABLE_TAGS.filter((tag) => !post.tags.includes(tag)).map(
-                    (tag) => (
-                      <option key={tag} value={tag}>
-                        {tag}
-                      </option>
-                    )
-                  )}
-                </select>
+                  <span>태그 추가</span>
+                  <ChevronDownIcon
+                    className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${isTagDropdownOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {isTagDropdownOpen && (
+                  <div className="absolute left-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-zinc-100 bg-white p-1 shadow-lg ring-1 ring-black/5 z-10">
+                    {AVAILABLE_TAGS.filter((tag) => !post.tags.includes(tag))
+                      .length > 0 ? (
+                      AVAILABLE_TAGS.filter((tag) => !post.tags.includes(tag)).map(
+                        (tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => {
+                              addTag(tag);
+                              setIsTagDropdownOpen(false);
+                            }}
+                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
+                          >
+                            {tag}
+                          </button>
+                        )
+                      )
+                    ) : (
+                      <div className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-400">
+                        추가할 태그가 없습니다
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
