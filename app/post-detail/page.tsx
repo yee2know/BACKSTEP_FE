@@ -2,34 +2,49 @@
 
 import { useState } from "react";
 import { Navbar } from "../_components/Navbar";
+import {
+  CalendarIcon,
+  UsersIcon,
+  LinkIcon,
+  UserIcon,
+  HeartIcon,
+  QuoteIcon,
+  MessageCircleIcon,
+  LightbulbIcon,
+  LockIcon,
+} from "lucide-react";
 
 export default function PostDetailPage() {
   // Mock Data
   const post = {
     title: "Cistus Project",
+    thumbnail: null as string | null, // In a real app, this would be a URL
     duration: "2024.01.15 - 2024.03.20",
     likes: 128,
     author: "Kim Developer",
+    role: "Frontend Developer",
     teamSize: 4,
     tags: ["Communication", "React", "Schedule Management"],
-    visibility: "public", // public, private, free, paid
+    visibility: "paid", // private, free, paid
+    price: 5000,
+    resultLink: "https://github.com/example/cistus",
     goal: "To build a platform where developers can share their failures and learn from each other, turning setbacks into assets.",
     failures: [
       {
         tag: "Communication",
-        question: "What was the biggest communication hurdle?",
+        question: "Communication 관련 가장 큰 어려움은 무엇이었나요?",
         answer:
           "We had a disconnect between the design team and the dev team regarding the feasibility of certain animations, leading to late-stage rework.",
       },
       {
         tag: "React",
-        question: "What technical challenges did you face with React?",
+        question: "React 관련 가장 큰 어려움은 무엇이었나요?",
         answer:
           "Managing complex global state without a proper library initially caused prop drilling hell. We had to refactor to use Zustand mid-project.",
       },
       {
         tag: "Schedule Management",
-        question: "How did the schedule slip?",
+        question: "Schedule Management 관련 가장 큰 어려움은 무엇이었나요?",
         answer:
           "We underestimated the time required for QA and bug fixing, resulting in a 2-week delay in the final launch.",
       },
@@ -38,122 +53,207 @@ export default function PostDetailPage() {
       "We learned that early communication between designers and developers is crucial. Also, setting up a solid state management strategy from day one saves a lot of time. Buffer time for QA is not optional.",
   };
 
-  const visibilityOptions = [
-    { id: "public", label: "모두 공개" },
-    { id: "private", label: "비공개" },
-    { id: "free", label: "무료" },
-    { id: "paid", label: "유료" },
-  ];
+  const [isUnlocked, setIsUnlocked] = useState(post.visibility !== "paid");
+
+  const handlePurchase = async () => {
+    if (
+      confirm(
+        `${post.price.toLocaleString()} 포인트를 사용하여 열람하시겠습니까?`
+      )
+    ) {
+      // TODO: Call backend API to deduct points and verify purchase
+      // await api.purchasePost(post.id);
+      alert("구매가 완료되었습니다.");
+      setIsUnlocked(true);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-zinc-900">
       <Navbar />
 
-      <main className="mx-auto max-w-3xl px-6 pt-24 pb-20">
+      <main className="mx-auto max-w-4xl px-6 pt-24 pb-32">
         {/* Header Section */}
-        <header className="mb-12 border-b border-zinc-100 pb-8">
-          {/* Row 1: Title, Duration, Like */}
-          <div className="mb-4 flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl">
-                {post.title}
-              </h1>
-              <div className="mt-2 flex items-center gap-2 text-sm text-zinc-500">
-                <CalendarIcon className="h-4 w-4" />
-                <span>{post.duration}</span>
+        <header className="mb-20">
+          {/* 0. Thumbnail */}
+          {post.thumbnail ? (
+            <div className="mb-10 aspect-video w-full overflow-hidden rounded-3xl border border-zinc-100 bg-zinc-50 shadow-sm">
+              <img
+                src={post.thumbnail}
+                alt="Thumbnail"
+                className="h-full w-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="mb-10 aspect-[21/9] w-full overflow-hidden rounded-3xl bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-100/50 flex items-center justify-center">
+              <span className="text-orange-300 font-bold text-2xl">
+                썸네일 없음
+              </span>
+            </div>
+          )}
+
+          {/* 1. Title & Like */}
+          <div className="mb-8 flex items-start justify-between gap-6">
+            <h1 className="text-5xl font-black tracking-tight text-zinc-900 leading-tight">
+              {post.title}
+            </h1>
+            <button className="group flex flex-col items-center justify-center rounded-2xl bg-zinc-50 px-4 py-3 transition-all hover:bg-orange-50 hover:scale-105 active:scale-95">
+              <HeartIcon className="h-7 w-7 text-zinc-400 transition-colors group-hover:text-orange-500 fill-transparent group-hover:fill-orange-500" />
+              <span className="mt-1 text-xs font-bold text-zinc-500 group-hover:text-orange-600">
+                {post.likes}
+              </span>
+            </button>
+          </div>
+
+          {/* 2. Tags */}
+          <div className="mb-10 flex flex-wrap items-center gap-2">
+            {post.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-zinc-100 px-4 py-1.5 text-sm font-bold text-zinc-600 transition-colors hover:bg-zinc-200"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+
+          {/* 3. Meta Info Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 rounded-3xl bg-zinc-50/50 border border-zinc-100 p-8">
+            <div className="space-y-6">
+              {/* Role */}
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm border border-zinc-100 text-zinc-400">
+                  <UserIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    역할
+                  </p>
+                  <p className="font-bold text-zinc-900 text-lg">{post.role}</p>
+                </div>
+              </div>
+
+              {/* Team Size */}
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm border border-zinc-100 text-zinc-400">
+                  <UsersIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    팀 규모
+                  </p>
+                  <p className="font-bold text-zinc-900 text-lg">
+                    {post.teamSize} 명
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex flex-col items-center gap-1">
-              <button className="group flex flex-col items-center justify-center rounded-full p-2 transition-colors hover:bg-orange-50">
-                <HeartIcon className="h-6 w-6 text-zinc-400 transition-colors group-hover:text-orange-500" />
-                <span className="text-xs font-bold text-zinc-500 group-hover:text-orange-500">
-                  {post.likes}
-                </span>
-              </button>
-            </div>
-          </div>
 
-          {/* Row 2: Author, Team Size */}
-          <div className="mb-6 flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-zinc-200" />{" "}
-              {/* Placeholder Avatar */}
-              <span className="font-medium text-zinc-900">{post.author}</span>
-            </div>
-            <div className="flex items-center gap-2 text-zinc-600">
-              <UsersIcon className="h-4 w-4" />
-              <span className="text-sm">{post.teamSize}명</span>
-            </div>
-          </div>
-
-          {/* Row 3: Tags */}
-          <div className="mb-6">
-            <div className="flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-600"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Row 4: Visibility & Modify */}
-          <div className="flex items-center justify-between">
-            {/* Visibility Toggle (Display Only) */}
-            <div className="flex overflow-hidden rounded-lg border border-zinc-200 p-1">
-              {visibilityOptions.map((option) => (
-                <div
-                  key={option.id}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    post.visibility === option.id
-                      ? "bg-orange-500 text-white shadow-sm"
-                      : "text-zinc-400 bg-transparent"
-                  }`}
-                >
-                  {option.label}
+            <div className="space-y-6">
+              {/* Duration */}
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm border border-zinc-100 text-zinc-400">
+                  <CalendarIcon className="h-5 w-5" />
                 </div>
-              ))}
-            </div>
+                <div>
+                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                    진행 기간
+                  </p>
+                  <p className="font-bold text-zinc-900 text-lg">
+                    {post.duration}
+                  </p>
+                </div>
+              </div>
 
-            {/* Modify Button */}
-            <button className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-zinc-700">
-              <EditIcon className="h-4 w-4" />
-              수정하기
-            </button>
+              {/* Result Link */}
+              {post.resultLink && (
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm border border-zinc-100 text-zinc-400">
+                    <LinkIcon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                      결과물
+                    </p>
+                    {isUnlocked ? (
+                      <a
+                        href={post.resultLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 font-bold text-orange-500 hover:text-orange-600 hover:underline decoration-2 underline-offset-4"
+                      >
+                        프로젝트 보러가기
+                        <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">
+                          {post.visibility === "paid"
+                            ? `₩${post.price.toLocaleString()}`
+                            : "무료"}
+                        </span>
+                      </a>
+                    ) : (
+                      <button
+                        onClick={handlePurchase}
+                        className="mt-1 flex items-center gap-2 rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-zinc-700"
+                      >
+                        <LockIcon className="h-3 w-3" />
+                        <span>
+                          {post.price.toLocaleString()}P로 결과물 확인
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
         {/* Content Section */}
-        <div className="space-y-12">
+        <div className="space-y-20">
           {/* Topic 1: Goal */}
-          <section>
-            <h2 className="mb-4 text-xl font-bold text-orange-500">
-              1. 프로젝트 목표
-            </h2>
-            <p className="leading-relaxed text-zinc-700">{post.goal}</p>
+          <section className="relative">
+            <div className="absolute -left-4 top-0 h-full w-1 bg-gradient-to-b from-orange-500 to-orange-200 rounded-full opacity-20 md:-left-8"></div>
+            <div className="flex items-center gap-3 mb-6">
+              <QuoteIcon className="h-6 w-6 text-orange-500 fill-orange-500" />
+              <h2 className="text-2xl font-black text-zinc-900">
+                프로젝트 목표
+              </h2>
+            </div>
+            <div className="text-xl font-medium leading-relaxed text-zinc-700 pl-2">
+              "{post.goal}"
+            </div>
           </section>
 
-          {/* Topic 2: Failures (Dynamic based on tags) */}
+          {/* Topic 2: Failures */}
           <section>
-            <h2 className="mb-6 text-xl font-bold text-orange-500">
-              2. 실패 경험 (태그별 회고)
-            </h2>
-            <div className="space-y-8">
+            <div className="flex items-center gap-3 mb-8">
+              <MessageCircleIcon className="h-6 w-6 text-orange-500" />
+              <h2 className="text-2xl font-black text-zinc-900">
+                실패 경험 & 도전
+              </h2>
+            </div>
+
+            <div className="grid gap-8">
               {post.failures.map((failure, index) => (
                 <div
                   key={index}
-                  className="rounded-xl border border-zinc-100 bg-zinc-50 p-6"
+                  className="group relative overflow-hidden rounded-3xl border border-zinc-200 bg-white transition-all hover:shadow-xl hover:shadow-orange-500/5 hover:border-orange-200"
                 >
-                  <div className="mb-3 inline-block rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-600">
-                    #{failure.tag}
+                  <div className="absolute top-0 left-0 h-full w-1.5 bg-zinc-100 group-hover:bg-orange-500 transition-colors"></div>
+                  <div className="p-8 pl-10">
+                    <div className="mb-4 flex items-center gap-3">
+                      <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-500 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors">
+                        #{failure.tag}
+                      </span>
+                    </div>
+
+                    <h3 className="mb-4 text-xl font-bold text-zinc-900">
+                      Q. {failure.question}
+                    </h3>
+
+                    <div className="rounded-2xl bg-zinc-50 p-6 text-lg leading-relaxed text-zinc-700 group-hover:bg-orange-50/30 transition-colors">
+                      {failure.answer}
+                    </div>
                   </div>
-                  <h3 className="mb-2 text-lg font-bold text-zinc-900">
-                    Q. {failure.question}
-                  </h3>
-                  <p className="text-zinc-700">{failure.answer}</p>
                 </div>
               ))}
             </div>
@@ -161,89 +261,18 @@ export default function PostDetailPage() {
 
           {/* Topic 3: Lessons */}
           <section>
-            <h2 className="mb-4 text-xl font-bold text-orange-500">
-              3. 배운 점
-            </h2>
-            <p className="leading-relaxed text-zinc-700">{post.lessons}</p>
+            <div className="rounded-3xl bg-zinc-900 p-10 text-white shadow-2xl shadow-zinc-200">
+              <div className="flex items-center gap-3 mb-6">
+                <LightbulbIcon className="h-6 w-6 text-yellow-400" />
+                <h2 className="text-2xl font-black text-white">배운 점</h2>
+              </div>
+              <div className="text-lg leading-relaxed text-zinc-300 font-medium">
+                {post.lessons}
+              </div>
+            </div>
           </section>
         </div>
       </main>
     </div>
-  );
-}
-
-// Simple Icons
-function CalendarIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-      <line x1="16" x2="16" y1="2" y2="6" />
-      <line x1="8" x2="8" y1="2" y2="6" />
-      <line x1="3" x2="21" y1="10" y2="10" />
-    </svg>
-  );
-}
-
-function UsersIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-
-function HeartIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-    </svg>
-  );
-}
-
-function EditIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-    </svg>
   );
 }
