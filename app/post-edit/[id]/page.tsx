@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Navbar } from "../_components/Navbar";
+import { useParams, useRouter } from "next/navigation";
+import { Navbar } from "../../_components/Navbar";
 import {
   CalendarIcon,
   UsersIcon,
@@ -13,45 +14,131 @@ import {
   UserIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { TAG_DATA, AVAILABLE_TAGS } from "../../../lib/tags";
+import { api, ApiResponse } from "../../../lib/api";
+
+interface FailureData {
+  tag: string;
+  questions: string[];
+  answers: string[];
+}
+
+interface ApiProjectDetail {
+  name: string;
+  user: string;
+  nickname: string;
+  period: string;
+  personnel: number;
+  intent: string;
+  my_role: string;
+  sale_status: string;
+  is_free: string | boolean;
+  price: number;
+  result_url: string;
+  failure_category: string[];
+  failure: Record<string, string[]>[];
+  growth_point: string;
+}
 
 export default function PostEditPage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = params?.id as string;
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
   // State for the post being edited
   const [post, setPost] = useState({
-    title: "Cistus Project",
+    title: "",
     thumbnail: null as string | null,
-    duration: "2024.01.15 - 2024.03.20",
-    likes: 128, // Likes are usually not editable by the user directly in this context, but kept for structure
-    author: "Kim Developer",
-    role: "Frontend Developer",
-    teamSize: 4,
-    tags: ["Communication", "React", "Schedule Management"],
+    duration: "",
+    likes: 0,
+    author: "",
+    authorId: "", // To store 'user' field from API
+    role: "",
+    teamSize: 0,
+    tags: [] as string[],
     visibility: "free", // private, free, paid
     price: 0,
-    resultLink: "", // Link to the final output
-    goal: "To build a platform where developers can share their failures and learn from each other, turning setbacks into assets.",
-    failures: [
-      {
-        tag: "Communication",
-        question: "What was the biggest communication hurdle?",
-        answer:
-          "We had a disconnect between the design team and the dev team regarding the feasibility of certain animations, leading to late-stage rework.",
-      },
-      {
-        tag: "React",
-        question: "What technical challenges did you face with React?",
-        answer:
-          "Managing complex global state without a proper library initially caused prop drilling hell. We had to refactor to use Zustand mid-project.",
-      },
-      {
-        tag: "Schedule Management",
-        question: "How did the schedule slip?",
-        answer:
-          "We underestimated the time required for QA and bug fixing, resulting in a 2-week delay in the final launch.",
-      },
-    ],
-    lessons:
-      "We learned that early communication between designers and developers is crucial. Also, setting up a solid state management strategy from day one saves a lot of time. Buffer time for QA is not optional.",
+    resultLink: "",
+    goal: "",
+    failures: [] as FailureData[],
+    lessons: "",
   });
+
+  // Fetch existing data
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchPost = async () => {
+      try {
+        const response = await api.get<ApiResponse<ApiProjectDetail>>(
+          `/projects/${id}`
+        );
+
+        if (response.success) {
+          const data = response.data;
+
+          // Map API data to UI state
+          const mappedFailures: FailureData[] = data.failure.map(
+            (item: Record<string, string[]>) => {
+              const tag = Object.keys(item)[0];
+              const answers = item[tag];
+              const questions = TAG_DATA[tag] || ["질문 1", "질문 2", "질문 3"];
+              return { tag, questions, answers };
+            }
+          );
+
+          const isFree = data.is_free === "true" || data.is_free === true;
+          const visibility = isFree
+            ? "free"
+            : data.sale_status === "SALE"
+            ? "paid"
+            : "private";
+
+          setPost({
+            title: data.name,
+            thumbnail: null,
+            duration: data.period,
+            likes: 0,
+            author: data.nickname,
+            authorId: data.user,
+            role: data.my_role,
+            teamSize: data.personnel,
+            tags: data.failure_category,
+            visibility: visibility,
+            price: data.price,
+            resultLink: data.result_url,
+            goal: data.intent,
+            failures: mappedFailures,
+            lessons: data.growth_point,
+          });
+
+          // Set date states from duration string if possible
+          if (data.period.includes(" - ")) {
+            const [start, end] = data.period.split(" - ");
+            setStartDate(start);
+            setEndDate(end);
+          } else if (data.period.includes(" ~ ")) {
+            const [start, end] = data.period.split(" ~ ");
+            setStartDate(start);
+            setEndDate(end);
+          }
+        } else {
+          alert(response.message || "글을 불러오는데 실패했습니다.");
+          router.push("/");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("서버 통신 중 오류가 발생했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
+  }, [id, router]);
 
   const [newTag, setNewTag] = useState("");
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
@@ -64,7 +151,7 @@ export default function PostEditPage() {
 
   // Sync dates to post.duration
   useEffect(() => {
-    setPost((prev) => ({ ...prev, duration: `${startDate} - ${endDate}` }));
+    setPost((prev) => ({ ...prev, duration: `${startDate} ~ ${endDate}` }));
   }, [startDate, endDate]);
 
   const visibilityOptions = [
@@ -73,27 +160,23 @@ export default function PostEditPage() {
     { id: "paid", label: "유료공개" },
   ];
 
-  const AVAILABLE_TAGS = [
-    "Communication",
-    "React",
-    "NextJS",
-    "TypeScript",
-    "Schedule Management",
-    "Design",
-    "Backend",
-    "Frontend",
-    "Planning",
-    "DevOps",
-  ];
-
   // Handlers
   const handleInputChange = (field: string, value: any) => {
     setPost((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleFailureChange = (index: number, field: string, value: string) => {
+  const handleFailureChange = (
+    failureIndex: number,
+    answerIndex: number,
+    value: string
+  ) => {
     const newFailures = [...post.failures];
-    newFailures[index] = { ...newFailures[index], [field]: value };
+    const newAnswers = [...newFailures[failureIndex].answers];
+    newAnswers[answerIndex] = value;
+    newFailures[failureIndex] = {
+      ...newFailures[failureIndex],
+      answers: newAnswers,
+    };
     setPost((prev) => ({ ...prev, failures: newFailures }));
   };
 
@@ -106,6 +189,12 @@ export default function PostEditPage() {
 
   const addTag = (tag: string) => {
     if (tag && !post.tags.includes(tag)) {
+      const questions = TAG_DATA[tag] || [
+        `${tag} 관련 가장 큰 어려움은 무엇이었나요?`,
+        "해결 과정은 어땠나요?",
+        "배운 점은 무엇인가요?",
+      ];
+
       setPost((prev) => ({
         ...prev,
         tags: [...prev.tags, tag],
@@ -113,8 +202,8 @@ export default function PostEditPage() {
           ...prev.failures,
           {
             tag: tag,
-            question: `${tag} 관련 가장 큰 어려움은 무엇이었나요?`,
-            answer: "",
+            questions: questions,
+            answers: ["", "", ""],
           },
         ],
       }));
@@ -146,10 +235,18 @@ export default function PostEditPage() {
       const mockGoal =
         "AI가 분석한 프로젝트 목표: 효율적인 협업과 기술적 도전을 통해 성장하는 것을 목표로 했습니다.";
 
-      const mockFailures = recommendedTags.map((tag) => ({
+      const mockFailures = recommendedTags.map((tag: string) => ({
         tag: tag,
-        question: `${tag} 관련 가장 큰 어려움은 무엇이었나요?`,
-        answer: `AI가 분석한 ${tag} 관련 실패 경험: 초기 설계 미흡으로 인한 재작업 발생.`,
+        questions: TAG_DATA[tag] || [
+          `${tag} 관련 가장 큰 어려움은 무엇이었나요?`,
+          "해결 과정은 어땠나요?",
+          "배운 점은 무엇인가요?",
+        ],
+        answers: [
+          `AI가 분석한 ${tag} 관련 실패 경험: 초기 설계 미흡으로 인한 재작업 발생.`,
+          "팀원들과의 긴밀한 소통으로 해결.",
+          "초기 기획의 중요성을 깨달음.",
+        ],
       }));
 
       // Update state
@@ -166,6 +263,47 @@ export default function PostEditPage() {
       console.error("Failed to get AI recommendations", error);
     } finally {
       setIsRecommending(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!post.title || !post.goal || !post.lessons) {
+      alert("필수 항목을 모두 입력해주세요.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const payload = {
+        name: post.title,
+        period: `${startDate} ~ ${endDate}`,
+        personnel: post.teamSize,
+        intent: post.goal,
+        my_role: post.role,
+        sale_status: post.visibility === "paid" ? "SALE" : "NOTSALE",
+        is_free: post.visibility === "free",
+        price: post.price,
+        result_url: post.resultLink,
+        failure_category: post.tags,
+        failure: post.failures.map((f) => ({ [f.tag]: f.answers })),
+        growth_point: post.lessons,
+      };
+
+      console.log("Sending payload:", payload); // Debug payload
+
+      const response = await api.patch(`/projects/${id}`, payload);
+
+      if (response.success) {
+        alert("글 수정이 완료되었습니다.");
+        router.push(`/post-detail/${id}`);
+      } else {
+        alert(response.message || "글 수정에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to save post", error);
+      alert("서버 통신 중 오류가 발생했습니다.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -484,13 +622,13 @@ export default function PostEditPage() {
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 >
                   <option value="">태그 추가</option>
-                  {AVAILABLE_TAGS.filter((tag) => !post.tags.includes(tag)).map(
-                    (tag) => (
-                      <option key={tag} value={tag}>
-                        {tag}
-                      </option>
-                    )
-                  )}
+                  {AVAILABLE_TAGS.filter(
+                    (tag: string) => !post.tags.includes(tag)
+                  ).map((tag: string) => (
+                    <option key={tag} value={tag}>
+                      {tag}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -535,29 +673,36 @@ export default function PostEditPage() {
                     </div>
                   </div>
 
-                  {/* Question */}
-                  <div className="mb-4">
-                    <label className="mb-1 block text-xs font-bold text-zinc-500">
-                      질문 (Question)
-                    </label>
-                    <div className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-bold text-zinc-500">
-                      {failure.question || "태그를 선택하면 질문이 생성됩니다."}
-                    </div>
-                  </div>
+                  {/* Questions and Answers */}
+                  <div className="space-y-6">
+                    {failure.questions.map((question, qIndex) => (
+                      <div key={qIndex}>
+                        {/* Question */}
+                        <div className="mb-2">
+                          <label className="mb-1 block text-xs font-bold text-zinc-500">
+                            질문 {qIndex + 1}
+                          </label>
+                          <div className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-bold text-zinc-500">
+                            {question}
+                          </div>
+                        </div>
 
-                  {/* Answer */}
-                  <div>
-                    <label className="mb-1 block text-xs font-bold text-zinc-500">
-                      답변 (Answer)
-                    </label>
-                    <textarea
-                      value={failure.answer}
-                      onChange={(e) =>
-                        handleFailureChange(index, "answer", e.target.value)
-                      }
-                      className="h-24 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-orange-500 focus:outline-none"
-                      placeholder="답변을 입력하세요"
-                    />
+                        {/* Answer */}
+                        <div>
+                          <label className="mb-1 block text-xs font-bold text-zinc-500">
+                            답변
+                          </label>
+                          <textarea
+                            value={failure.answers[qIndex]}
+                            onChange={(e) =>
+                              handleFailureChange(index, qIndex, e.target.value)
+                            }
+                            className="h-24 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-orange-500 focus:outline-none"
+                            placeholder="답변을 입력하세요"
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -580,9 +725,12 @@ export default function PostEditPage() {
 
         {/* Save Button (Moved to Bottom) */}
         <div className="mt-12 flex justify-end border-t border-zinc-100 pt-8">
-          <button className="flex items-center gap-2 rounded-lg bg-zinc-900 px-8 py-3 text-base font-bold text-white transition-colors hover:bg-zinc-700">
+          <button
+            onClick={handleSave}
+            className="flex items-center gap-2 rounded-lg bg-zinc-900 px-8 py-3 text-base font-bold text-white transition-colors hover:bg-zinc-700"
+          >
             <SaveIcon className="h-5 w-5" />
-            저장하기
+            {saving ? "저장중..." : "저장하기"}
           </button>
         </div>
       </main>

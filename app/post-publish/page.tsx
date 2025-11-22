@@ -13,7 +13,8 @@ import {
   UserIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { api } from "../../lib/api";
+import { api, ApiResponse } from "../../lib/api";
+import { TAG_DATA, AVAILABLE_TAGS } from "../../lib/tags";
 
 export default function PostPublishPage() {
   // State for the new post
@@ -29,7 +30,7 @@ export default function PostPublishPage() {
     price: 0,
     resultLink: "",
     goal: "",
-    failures: [] as { tag: string; question: string; answer: string }[],
+    failures: [] as { tag: string; questions: string[]; answers: string[] }[],
     lessons: "",
   });
 
@@ -53,27 +54,23 @@ export default function PostPublishPage() {
     { id: "paid", label: "유료공개" },
   ];
 
-  const AVAILABLE_TAGS = [
-    "Communication",
-    "React",
-    "NextJS",
-    "TypeScript",
-    "Schedule Management",
-    "Design",
-    "Backend",
-    "Frontend",
-    "Planning",
-    "DevOps",
-  ];
-
   // Handlers
   const handleInputChange = (field: string, value: any) => {
     setPost((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleFailureChange = (index: number, field: string, value: string) => {
+  const handleFailureChange = (
+    failureIndex: number,
+    answerIndex: number,
+    value: string
+  ) => {
     const newFailures = [...post.failures];
-    newFailures[index] = { ...newFailures[index], [field]: value };
+    const newAnswers = [...newFailures[failureIndex].answers];
+    newAnswers[answerIndex] = value;
+    newFailures[failureIndex] = {
+      ...newFailures[failureIndex],
+      answers: newAnswers,
+    };
     setPost((prev) => ({ ...prev, failures: newFailures }));
   };
 
@@ -86,6 +83,12 @@ export default function PostPublishPage() {
 
   const addTag = (tag: string) => {
     if (tag && !post.tags.includes(tag)) {
+      const questions = TAG_DATA[tag] || [
+        `${tag} 관련 가장 큰 어려움은 무엇이었나요?`,
+        "해결 과정은 어땠나요?",
+        "배운 점은 무엇인가요?",
+      ];
+
       setPost((prev) => ({
         ...prev,
         tags: [...prev.tags, tag],
@@ -93,8 +96,8 @@ export default function PostPublishPage() {
           ...prev.failures,
           {
             tag: tag,
-            question: `${tag} 관련 가장 큰 어려움은 무엇이었나요?`,
-            answer: "",
+            questions: questions,
+            answers: ["", "", ""],
           },
         ],
       }));
@@ -128,8 +131,16 @@ export default function PostPublishPage() {
 
       const mockFailures = recommendedTags.map((tag) => ({
         tag: tag,
-        question: `${tag} 관련 가장 큰 어려움은 무엇이었나요?`,
-        answer: `AI가 분석한 ${tag} 관련 실패 경험: 초기 설계 미흡으로 인한 재작업 발생.`,
+        questions: TAG_DATA[tag] || [
+          `${tag} 관련 가장 큰 어려움은 무엇이었나요?`,
+          "해결 과정은 어땠나요?",
+          "배운 점은 무엇인가요?",
+        ],
+        answers: [
+          `AI가 분석한 ${tag} 관련 실패 경험: 초기 설계 미흡으로 인한 재작업 발생.`,
+          "팀원들과의 긴밀한 소통으로 해결.",
+          "초기 기획의 중요성을 깨달음.",
+        ],
       }));
 
       // Update state
@@ -161,12 +172,14 @@ export default function PostPublishPage() {
       price: post.price,
       result_url: post.resultLink,
       failure_category: post.tags,
-      failure: post.failures.map((f) => ({ [f.tag]: [f.question, f.answer] })),
+      failure: post.failures.map((f) => ({
+        [f.tag]: f.answers,
+      })),
       growth_point: post.lessons,
     };
 
     try {
-      const data = await api.post("/projects", body);
+      const data = await api.post<ApiResponse>("/projects", body);
 
       if (data.success) {
         alert(data.message || "게시글이 성공적으로 등록되었습니다.");
@@ -548,29 +561,36 @@ export default function PostPublishPage() {
                     </div>
                   </div>
 
-                  {/* Question */}
-                  <div className="mb-4">
-                    <label className="mb-1 block text-xs font-bold text-zinc-500">
-                      질문 (Question)
-                    </label>
-                    <div className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-bold text-zinc-500">
-                      {failure.question || "태그를 선택하면 질문이 생성됩니다."}
-                    </div>
-                  </div>
+                  {/* Questions and Answers */}
+                  <div className="space-y-6">
+                    {failure.questions.map((question, qIndex) => (
+                      <div key={qIndex}>
+                        {/* Question */}
+                        <div className="mb-2">
+                          <label className="mb-1 block text-xs font-bold text-zinc-500">
+                            질문 {qIndex + 1}
+                          </label>
+                          <div className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-bold text-zinc-500">
+                            {question}
+                          </div>
+                        </div>
 
-                  {/* Answer */}
-                  <div>
-                    <label className="mb-1 block text-xs font-bold text-zinc-500">
-                      답변 (Answer)
-                    </label>
-                    <textarea
-                      value={failure.answer}
-                      onChange={(e) =>
-                        handleFailureChange(index, "answer", e.target.value)
-                      }
-                      className="h-24 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-orange-500 focus:outline-none"
-                      placeholder="답변을 입력하세요"
-                    />
+                        {/* Answer */}
+                        <div>
+                          <label className="mb-1 block text-xs font-bold text-zinc-500">
+                            답변
+                          </label>
+                          <textarea
+                            value={failure.answers[qIndex]}
+                            onChange={(e) =>
+                              handleFailureChange(index, qIndex, e.target.value)
+                            }
+                            className="h-24 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-orange-500 focus:outline-none"
+                            placeholder="답변을 입력하세요"
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}

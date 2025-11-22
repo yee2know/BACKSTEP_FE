@@ -1,5 +1,12 @@
 const BASE_URL = "https://ccscaps.com/api";
 
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  code: number;
+  data: T;
+}
+
 type RequestMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 async function request<T>(
@@ -10,7 +17,7 @@ async function request<T>(
   const token =
     typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
@@ -22,7 +29,7 @@ async function request<T>(
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method,
       headers,
-      body: body ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 
     // Handle 401 Unauthorized globally
