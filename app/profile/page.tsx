@@ -1,11 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navbar } from "../_components/Navbar";
+import { api } from "../../lib/api";
+
+type UserResponse = {
+  success: boolean;
+  code: number;
+  message: string;
+  data: {
+    user: {
+      user_id: number;
+      name: string;
+      nickname: string | null;
+      email: string;
+      created_at: string;
+      updated_at: string;
+    };
+  };
+};
 
 export default function ProfilePage() {
   const [searchType, setSearchType] = useState<"post" | "profile">("post");
+  const [user, setUser] = useState<UserResponse["data"]["user"] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await api.get<UserResponse>("/users/me");
+        setUser(response.data.user);
+      } catch (error) {
+        console.error("Failed to fetch user info", error);
+        setErrorMessage("사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const mockBio = useMemo(
+    () =>
+      "안녕하세요! 프론트엔드 개발에 관심이 많은 개발자입니다. React와 Next.js를 주로 사용하며, 사용자 경험을 개선하는 UI 디자인에 흥미가 있습니다. 꾸준히 기록하고 성장하는 개발자가 되고 싶습니다.",
+    []
+  );
 
   return (
     <div className="h-screen overflow-y-scroll snap-y snap-mandatory bg-white text-zinc-900">
@@ -30,15 +72,21 @@ export default function ProfilePage() {
                 </div>
 
                 {/* User Identity */}
-                <h1 className="mb-1 text-3xl font-extrabold text-zinc-900">Cistus User</h1>
-                <p className="mb-6 font-medium text-zinc-400">user@example.com</p>
+                <div className="mb-2 flex flex-col gap-1 text-center lg:text-left">
+                  <h1 className="text-3xl font-extrabold text-zinc-900">
+                    {isLoading ? "사용자 정보를 불러오는 중..." : user?.name ?? "Cistus User"}
+                  </h1>
+                  <p className="font-medium text-zinc-400">
+                    {isLoading ? "loading@example.com" : user?.email ?? "user@example.com"}
+                  </p>
+                </div>
+
+                {errorMessage ? (
+                  <p className="mb-4 text-sm font-medium text-red-500">{errorMessage}</p>
+                ) : null}
 
                 {/* Bio */}
-                <p className="mb-6 leading-relaxed text-zinc-600">
-                  안녕하세요! 프론트엔드 개발에 관심이 많은 개발자입니다.
-                  React와 Next.js를 주로 사용하며, 사용자 경험을 개선하는 UI 디자인에 흥미가 있습니다.
-                  꾸준히 기록하고 성장하는 개발자가 되고 싶습니다.
-                </p>
+                <p className="mb-6 leading-relaxed text-zinc-600">{mockBio}</p>
 
                 {/* Edit Button */}
                 <Link
