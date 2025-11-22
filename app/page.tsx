@@ -68,6 +68,17 @@ export default function MainPage() {
     );
   };
 
+useEffect(() => {
+  if (searchType === "profile") {
+    if (selectedTags.length > 0) {
+      setSelectedTags([]);
+    }
+    if (isTagPickerOpen) {
+      setIsTagPickerOpen(false);
+    }
+  }
+}, [searchType, selectedTags, isTagPickerOpen]);
+
   const executeSearch = (
     query: string,
     type: "post" | "profile",
@@ -79,7 +90,7 @@ export default function MainPage() {
     if (trimmed) {
       params.set("q", trimmed);
     }
-    if (categories.length) {
+    if (type === "post" && categories.length) {
       const encodedCategories = categories
         .map((tag) => encodeURIComponent(tag))
         .join(",");
@@ -395,86 +406,95 @@ export default function MainPage() {
             </div>
           </form>
 
-          {/* Tags Section */}
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {AVAILABLE_TAGS.slice(0, 5).map((tag) => {
-              const isSelected = selectedTags.includes(tag);
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => toggleTag(tag)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${isSelected
-                    ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
-                    : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
-                    }`}
-                >
-                  #{tag}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => setIsTagPickerOpen(true)}
-              className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-500 transition-colors hover:border-orange-300 hover:text-orange-500"
-            >
-              태그 더 보기
-            </button>
-          </div>
-        </div>
-        {isTagPickerOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-            <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-zinc-900">실패 태그 선택</h2>
-                <button
-                  type="button"
-                  onClick={() => setIsTagPickerOpen(false)}
-                  className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-500 hover:bg-zinc-200"
-                >
-                  닫기
-                </button>
-              </div>
-              <div className="mb-4 flex flex-wrap gap-2">
-                {AVAILABLE_TAGS.map((tag) => {
+          {searchType === "post" && (
+            <>
+              {/* Tags Section */}
+              <div className="mt-6 flex flex-wrap justify-center gap-2">
+                {AVAILABLE_TAGS.slice(0, 5).map((tag) => {
                   const isSelected = selectedTags.includes(tag);
                   return (
                     <button
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(tag)}
-                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${isSelected
-                        ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
-                        : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
-                        }`}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                        isSelected
+                          ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
+                          : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
+                      }`}
                     >
                       #{tag}
                     </button>
                   );
                 })}
-              </div>
-              <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
-                  onClick={() => setSelectedTags([])}
-                  className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-500 hover:border-zinc-400"
+                  onClick={() => setIsTagPickerOpen(true)}
+                  className="rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-500 transition-colors hover:border-orange-300 hover:text-orange-500"
                 >
-                  선택 초기화
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsTagPickerOpen(false);
-                    executeSearch(searchQuery, searchType, selectedTags);
-                  }}
-                  className="rounded-xl bg-orange-500 px-6 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-600"
-                >
-                  선택 후 검색
+                  태그 더 보기
                 </button>
               </div>
-            </div>
-          </div>
-        )}
+
+              {isTagPickerOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+                  <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h2 className="text-lg font-bold text-zinc-900">
+                        실패 태그 선택
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={() => setIsTagPickerOpen(false)}
+                        className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-500 hover:bg-zinc-200"
+                      >
+                        닫기
+                      </button>
+                    </div>
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {AVAILABLE_TAGS.map((tag) => {
+                        const isSelected = selectedTags.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => toggleTag(tag)}
+                            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                              isSelected
+                                ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
+                                : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
+                            }`}
+                          >
+                            #{tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTags([])}
+                        className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-500 hover:border-zinc-400"
+                      >
+                        선택 초기화
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsTagPickerOpen(false);
+                          executeSearch(searchQuery, searchType, selectedTags);
+                        }}
+                        className="rounded-xl bg-orange-500 px-6 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-600"
+                      >
+                        선택 후 검색
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
         {/* Spacer to separate posts from the hero area visually */}
         <div className="h-24"></div>
