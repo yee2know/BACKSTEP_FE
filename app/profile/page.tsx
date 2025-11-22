@@ -8,7 +8,7 @@ export default function ProfilePage() {
   const [searchType, setSearchType] = useState<"post" | "profile">("post");
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
+    <div className="h-screen overflow-y-scroll snap-y snap-mandatory bg-white text-zinc-900">
       {/* Navigation Bar */}
       <Navbar
         searchType={searchType}
@@ -17,7 +17,7 @@ export default function ProfilePage() {
 
       <main className="mx-auto w-full">
         {/* Top Section: Profile & Recent Posts */}
-        <div className="mx-auto max-w-7xl px-6 pt-24 pb-20">
+        <div className="mx-auto max-w-7xl px-6 pt-24 pb-20 min-h-screen snap-start">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
             {/* Left Column: User Profile Info (Fixed/Sticky on Desktop) */}
             <div className="lg:col-span-3">
@@ -35,8 +35,8 @@ export default function ProfilePage() {
 
                 {/* Bio */}
                 <p className="mb-6 leading-relaxed text-zinc-600">
-                  안녕하세요! 프론트엔드 개발에 관심이 많은 개발자입니다. 
-                  React와 Next.js를 주로 사용하며, 사용자 경험을 개선하는 UI 디자인에 흥미가 있습니다. 
+                  안녕하세요! 프론트엔드 개발에 관심이 많은 개발자입니다.
+                  React와 Next.js를 주로 사용하며, 사용자 경험을 개선하는 UI 디자인에 흥미가 있습니다.
                   꾸준히 기록하고 성장하는 개발자가 되고 싶습니다.
                 </p>
 
@@ -56,7 +56,7 @@ export default function ProfilePage() {
                 <span className="h-8 w-2 rounded-full bg-orange-500"></span>
                 최근 작성한 글
               </h2>
-              
+
               <div className="space-y-6">
                 {[
                   {
@@ -84,8 +84,8 @@ export default function ProfilePage() {
                     likes: 85
                   }
                 ].map((post) => (
-                  <article 
-                    key={post.id} 
+                  <article
+                    key={post.id}
                     className="group relative flex flex-col gap-6 overflow-hidden rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:flex-row"
                   >
                     <div className="aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-40">
@@ -140,7 +140,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Bottom Section: Full Width Portfolio Feed */}
-        <div className="w-full bg-zinc-50 border-t border-zinc-200">
+        <div className="w-full bg-zinc-50 border-t border-zinc-200 min-h-screen snap-start">
           <div className="mx-auto max-w-7xl px-6 py-20">
             <div className="mb-12 text-center">
               <span className="mb-3 inline-block rounded-full bg-orange-100 px-4 py-1.5 text-sm font-bold text-orange-600">
@@ -160,13 +160,13 @@ export default function ProfilePage() {
                   <div className="aspect-video w-full bg-zinc-100 md:aspect-auto md:h-full" />
                   <div className="p-8 md:p-12 flex flex-col justify-center">
                     <div className="mb-4 flex gap-2 flex-wrap">
-                       <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">React</span>
-                       <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">Redux</span>
-                       <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">Performance</span>
+                      <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">React</span>
+                      <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">Redux</span>
+                      <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">Performance</span>
                     </div>
                     <h3 className="mb-4 text-3xl font-bold text-zinc-900">E-Commerce Dashboard Refactoring</h3>
                     <p className="mb-8 text-lg text-zinc-600 leading-relaxed">
-                      "너무 완벽하려다 출시도 못한 투두리스트" 프로젝트의 실패 경험을 바탕으로, 
+                      "너무 완벽하려다 출시도 못한 투두리스트" 프로젝트의 실패 경험을 바탕으로,
                       과도한 엔지니어링을 배제하고 실용적인 성능 최적화에 집중했습니다.
                       기존 코드를 리팩토링하여 렌더링 성능을 40% 개선하는 성과를 거두었습니다.
                     </p>
@@ -180,16 +180,16 @@ export default function ProfilePage() {
               {/* Portfolio Item 2 */}
               <div className="group overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-zinc-200 transition-shadow hover:shadow-xl">
                 <div className="grid md:grid-cols-2">
-                   <div className="p-8 md:p-12 flex flex-col justify-center order-2 md:order-1">
+                  <div className="p-8 md:p-12 flex flex-col justify-center order-2 md:order-1">
                     <div className="mb-4 flex gap-2 flex-wrap">
-                       <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">Socket.io</span>
-                       <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">Node.js</span>
-                       <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">System Design</span>
+                      <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">Socket.io</span>
+                      <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">Node.js</span>
+                      <span className="px-3 py-1 bg-zinc-100 rounded-full text-xs font-bold text-zinc-600">System Design</span>
                     </div>
                     <h3 className="mb-4 text-3xl font-bold text-zinc-900">Real-time Collaboration Server</h3>
                     <p className="mb-8 text-lg text-zinc-600 leading-relaxed">
-                      "실시간 협업 툴 실패기"에서의 교훈을 적용하여, 메모리 누수를 방지하는 
-                      견고한 소켓 서버 아키텍처를 재설계했습니다. 
+                      "실시간 협업 툴 실패기"에서의 교훈을 적용하여, 메모리 누수를 방지하는
+                      견고한 소켓 서버 아키텍처를 재설계했습니다.
                       부하 테스트를 프로세스에 도입하여 안정성을 99.9%까지 끌어올렸습니다.
                     </p>
                     <button className="w-fit font-bold text-orange-600 hover:text-orange-700 hover:underline underline-offset-4">
@@ -200,7 +200,7 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Load More Trigger (Visual) */}
             <div className="mt-20 flex flex-col items-center justify-center gap-4">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"></div>
