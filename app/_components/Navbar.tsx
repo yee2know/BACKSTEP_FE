@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api, ApiResponse } from "../../lib/api";
 
 type NavbarProps = {
   isScrolled?: boolean;
@@ -27,9 +28,30 @@ export function Navbar({
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // Profile dropdown & Balance state
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
+
   // Use props if available, otherwise internal state
   const searchType = propSearchType || internalSearchType;
   const setSearchType = propSetSearchType || setInternalSearchType;
+
+  // Fetch user balance on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await api.get<
+          ApiResponse<{ user: { money: number } }>
+        >("/users/me");
+        if (response.success) {
+          setBalance(response.data.user.money);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user info", error);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,10 +84,11 @@ export function Navbar({
 
       {/* Center: Nav Search Bar (Visible only when scrolled) */}
       <div
-        className={`flex flex-1 items-center justify-center gap-4 transition-all duration-500 ${showSearch
-          ? "translate-y-0 opacity-100"
-          : "pointer-events-none -translate-y-4 opacity-0"
-          }`}
+        className={`flex flex-1 items-center justify-center gap-4 transition-all duration-500 ${
+          showSearch
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none -translate-y-4 opacity-0"
+        }`}
       >
         <form onSubmit={handleSearch} className="relative w-full max-w-md">
           <div className="absolute left-2 top-1/2 z-10 -translate-y-1/2">
@@ -76,8 +99,9 @@ export function Navbar({
             >
               <span>{searchType === "post" ? "글" : "프로필"}</span>
               <ChevronDownIcon
-                className={`h-3 w-3 text-zinc-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
-                  }`}
+                className={`h-3 w-3 text-zinc-400 transition-transform duration-200 ${
+                  isDropdownOpen ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -89,10 +113,11 @@ export function Navbar({
                     setSearchType("post");
                     setIsDropdownOpen(false);
                   }}
-                  className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${searchType === "post"
+                  className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                    searchType === "post"
                       ? "bg-orange-50 text-orange-600"
                       : "text-zinc-600 hover:bg-zinc-50"
-                    }`}
+                  }`}
                 >
                   글
                 </button>
@@ -102,10 +127,11 @@ export function Navbar({
                     setSearchType("profile");
                     setIsDropdownOpen(false);
                   }}
-                  className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${searchType === "profile"
+                  className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                    searchType === "profile"
                       ? "bg-orange-50 text-orange-600"
                       : "text-zinc-600 hover:bg-zinc-50"
-                    }`}
+                  }`}
                 >
                   프로필
                 </button>
@@ -117,7 +143,11 @@ export function Navbar({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={searchType === "post" ? "글 내용을 검색해보세요" : "프로필을 검색해보세요"}
+            placeholder={
+              searchType === "post"
+                ? "글 내용을 검색해보세요"
+                : "프로필을 검색해보세요"
+            }
             className="w-full rounded-full border border-zinc-200 bg-zinc-50 pl-24 pr-10 py-2 text-sm focus:border-orange-500 focus:outline-none transition-all"
           />
           <button
@@ -130,21 +160,48 @@ export function Navbar({
       </div>
 
       {/* Right: Profile */}
-      <div className="flex items-center gap-4">
-        <Link
-          href="/profile"
-          className="h-8 w-8 overflow-hidden rounded-full bg-zinc-200 transition-all hover:ring-2 hover:ring-orange-500"
+      <div className="relative flex items-center gap-4">
+        <button
+          onClick={() => setIsProfileOpen(!isProfileOpen)}
+          className="h-8 w-8 overflow-hidden rounded-full bg-zinc-200 transition-all hover:ring-2 hover:ring-orange-500 focus:outline-none"
         >
           {/* Profile Image Placeholder */}
           <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
             U
           </div>
-        </Link>
+        </button>
+
+        {isProfileOpen && (
+          <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-zinc-100 bg-white p-1 shadow-lg ring-1 ring-black/5">
+            <div className="px-3 py-2 text-sm font-bold text-zinc-900 border-b border-zinc-50 mb-1">
+              내 포인트:{" "}
+              <span className="text-orange-500">
+                {balance?.toLocaleString() ?? 0} P
+              </span>
+            </div>
+            <Link
+              href="/profile"
+              className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
+              onClick={() => setIsProfileOpen(false)}
+            >
+              내 프로필
+            </Link>
+            <button
+              onClick={() => {
+                setIsProfileOpen(false);
+                localStorage.removeItem("accessToken");
+                window.location.href = "/login";
+              }}
+              className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+            >
+              로그아웃
+            </button>
+          </div>
+        )}
       </div>
     </nav>
   );
 }
-
 
 function SearchIcon({ className }: { className?: string }) {
   return (
