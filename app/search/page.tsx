@@ -40,7 +40,7 @@ interface SearchApiData {
   data_search: SearchApiItem[];
 }
 
-type FilterType = "all" | "private" | "free" | "paid";
+type FilterType = "all" | "private" | "public";
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
@@ -122,15 +122,12 @@ function SearchPageContent() {
       setLoading(true);
       setError(null);
       try {
-        const response = await api.post<ApiResponse<SearchApiData>>(
-          "/search",
-          {
-            type: typeParam,
-            keyword,
-            failure_catagory: typeParam === "project" ? categories : [],
-            failure_category: typeParam === "project" ? categories : [],
-          }
-        );
+        const response = await api.post<ApiResponse<SearchApiData>>("/search", {
+          type: typeParam,
+          keyword,
+          failure_catagory: typeParam === "project" ? categories : [],
+          failure_category: typeParam === "project" ? categories : [],
+        });
 
         if (!response.success) {
           throw new Error(response.message || "검색에 실패했습니다.");
@@ -233,15 +230,8 @@ function SearchPageContent() {
         return true;
       }
       if (filter === "all") return true;
-      if (filter === "free") {
-        return item.is_free === true || item.is_free === "true";
-      }
-      if (filter === "paid") {
-        return (
-          item.sale_status === "SALE" ||
-          item.is_free === false ||
-          item.is_free === "false"
-        );
+      if (filter === "public") {
+        return item.sale_status !== "NOTSALE";
       }
       if (filter === "private") {
         return item.sale_status === "NOTSALE";
@@ -302,14 +292,9 @@ function SearchPageContent() {
                 onClick={() => setFilter("private")}
               />
               <FilterButton
-                label="무료 공개"
-                isActive={filter === "free"}
-                onClick={() => setFilter("free")}
-              />
-              <FilterButton
-                label="유료 공개"
-                isActive={filter === "paid"}
-                onClick={() => setFilter("paid")}
+                label="공개"
+                isActive={filter === "public"}
+                onClick={() => setFilter("public")}
               />
             </div>
           )}
@@ -317,60 +302,62 @@ function SearchPageContent() {
 
         {searchType === "post" && (
           <div className="mb-10 rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
-          <div className="flex items-center justify-between gap-4 mb-3">
-            <p className="text-sm font-semibold text-zinc-600">
-              실패 카테고리 선택 ({selectedCategories.length})
-            </p>
-            {selectedCategories.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setSelectedCategories([])}
-                className="text-sm font-medium text-zinc-500 hover:text-zinc-800"
-              >
-                선택 초기화
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {AVAILABLE_TAGS.map((tag: string) => {
-              const isSelected = selectedCategories.includes(tag);
-              return (
+            <div className="flex items-center justify-between gap-4 mb-3">
+              <p className="text-sm font-semibold text-zinc-600">
+                실패 카테고리 선택 ({selectedCategories.length})
+              </p>
+              {selectedCategories.length > 0 && (
                 <button
-                  key={tag}
                   type="button"
-                  onClick={() => toggleCategory(tag)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                    isSelected
-                      ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
-                      : "bg-white text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
-                  }`}
+                  onClick={() => setSelectedCategories([])}
+                  className="text-sm font-medium text-zinc-500 hover:text-zinc-800"
                 >
-                  #{tag}
+                  선택 초기화
                 </button>
-              );
-            })}
-          </div>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => executeSearch(searchQuery, searchType, selectedCategories)}
-              className="rounded-xl bg-orange-500 px-6 py-2 text-sm font-bold text-white transition-all hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/30"
-            >
-              조건으로 검색
-            </button>
-            {selectedCategories.length > 0 && (
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {AVAILABLE_TAGS.map((tag: string) => {
+                const isSelected = selectedCategories.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleCategory(tag)}
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                      isSelected
+                        ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
+                        : "bg-white text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
+                    }`}
+                  >
+                    #{tag}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedCategories([]);
-                  executeSearch(searchQuery, searchType, []);
-                }}
-                className="rounded-xl border border-orange-200 px-6 py-2 text-sm font-bold text-orange-500 transition-all hover:bg-orange-50"
+                onClick={() =>
+                  executeSearch(searchQuery, searchType, selectedCategories)
+                }
+                className="rounded-xl bg-orange-500 px-6 py-2 text-sm font-bold text-white transition-all hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/30"
               >
-                필터 초기화 후 검색
+                조건으로 검색
               </button>
-            )}
-          </div>
+              {selectedCategories.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategories([]);
+                    executeSearch(searchQuery, searchType, []);
+                  }}
+                  className="rounded-xl border border-orange-200 px-6 py-2 text-sm font-bold text-orange-500 transition-all hover:bg-orange-50"
+                >
+                  필터 초기화 후 검색
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -405,14 +392,12 @@ function SearchPageContent() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredResults
-                .filter(isProjectResult)
-                .map((project) => (
-                  <ProjectResultCard
-                    key={`project-${project.project_id}`}
-                    project={project}
-                  />
-                ))}
+              {filteredResults.filter(isProjectResult).map((project) => (
+                <ProjectResultCard
+                  key={`project-${project.project_id}`}
+                  project={project}
+                />
+              ))}
             </div>
           )}
         </section>
@@ -449,10 +434,11 @@ function FilterButton({
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${isActive
+      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+        isActive
           ? "bg-white text-orange-600 shadow-sm"
           : "text-zinc-500 hover:text-zinc-700"
-        }`}
+      }`}
     >
       {label}
     </button>
@@ -460,8 +446,7 @@ function FilterButton({
 }
 
 function ProjectResultCard({ project }: { project: SearchProjectResult }) {
-  const isFree =
-    project.is_free === true || project.is_free === "true";
+  const isFree = project.is_free === true || project.is_free === "true";
   const isPaid =
     project.sale_status === "SALE" ||
     project.is_free === false ||
@@ -469,12 +454,15 @@ function ProjectResultCard({ project }: { project: SearchProjectResult }) {
   const priceLabel = isFree
     ? "무료"
     : isPaid
-      ? `₩${project.price.toLocaleString()}`
-      : "비공개";
+    ? `₩${project.price.toLocaleString()}`
+    : "비공개";
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
-      <Link href={`/post-detail/${project.project_id}`} className="block h-full">
+      <Link
+        href={`/post-detail/${project.project_id}`}
+        className="block h-full"
+      >
         <div className="aspect-video w-full bg-zinc-100 transition-colors group-hover:bg-orange-50">
           {project.project_image ? (
             <img
@@ -511,8 +499,8 @@ function ProjectResultCard({ project }: { project: SearchProjectResult }) {
                 isFree
                   ? "text-green-600"
                   : isPaid
-                    ? "text-orange-600"
-                    : "text-zinc-400"
+                  ? "text-orange-600"
+                  : "text-zinc-400"
               }
             >
               {priceLabel}
