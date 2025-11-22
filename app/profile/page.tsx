@@ -39,20 +39,8 @@ export default function ProfilePage() {
                   꾸준히 기록하고 성장하는 개발자가 되고 싶습니다.
                 </p>
 
-                {/* Stats/Tags */}
-                <div className="mb-8 flex flex-wrap justify-center gap-2 lg:justify-start">
-                  {["#Frontend", "#React", "#NextJS", "#UI/UX"].map((tag) => (
-                    <span 
-                      key={tag} 
-                      className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-bold text-zinc-600 transition-colors hover:bg-orange-100 hover:text-orange-600"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
                 {/* Edit Button */}
-                <button className="w-full rounded-xl border-2 border-zinc-200 bg-white py-3 font-bold text-zinc-700 transition-all hover:border-orange-500 hover:text-orange-500 hover:shadow-lg hover:shadow-orange-500/10">
+                <button className="mb-8 w-full rounded-xl border-2 border-zinc-200 bg-white py-3 font-bold text-zinc-700 transition-all hover:border-orange-500 hover:text-orange-500 hover:shadow-lg hover:shadow-orange-500/10">
                   프로필 편집
                 </button>
               </div>
