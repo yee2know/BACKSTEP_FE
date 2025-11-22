@@ -4,11 +4,44 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navbar } from "./_components/Navbar";
 import { AVAILABLE_TAGS } from "../lib/tags";
+import { api, ApiResponse } from "../lib/api";
+
+interface HelpfulProject {
+  name: string;
+  user: string;
+  project_id: number;
+  project_image: string;
+  period: string;
+  sale_status: string;
+  is_free: string | boolean;
+  price: number;
+  failure_catagory: string[];
+}
+
+interface HelpfulProjectsResponse {
+  data_total: number;
+  projects: HelpfulProject[];
+}
 
 export default function MainPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchType, setSearchType] = useState<"post" | "profile">("post");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // Helpful projects state
+  const [allHelpfulProjects, setAllHelpfulProjects] = useState<HelpfulProject[]>([]);
+  const [helpfulLoading, setHelpfulLoading] = useState(false);
+  const [helpfulError, setHelpfulError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 6;
+
+  // Calculate paginated projects
+  const helpfulProjects = allHelpfulProjects.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,6 +56,89 @@ export default function MainPage() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Helper function to decode JWT token and get user ID
+  const getUserIdFromToken = (token: string): string | null => {
+    try {
+      // JWT tokens have 3 parts separated by dots
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      
+      // Decode the payload (second part)
+      const payload = JSON.parse(atob(parts[1]));
+      
+      // Try different possible fields for user ID
+      return payload.user_id || payload.userId || payload.id || payload.sub || null;
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      return null;
+    }
+  };
+
+  // Fetch helpful projects
+  useEffect(() => {
+    const fetchHelpfulProjects = async () => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      if (!token) {
+        // Not logged in, don't show helpful projects
+        return;
+      }
+
+      // Get user ID from token
+      const userId = getUserIdFromToken(token) || 
+                     (typeof window !== "undefined" ? localStorage.getItem("userId") : null);
+      
+      if (!userId) {
+        // User ID not available, skip fetching
+        console.log("User ID not available");
+        return;
+      }
+
+      setHelpfulLoading(true);
+      setHelpfulError(null);
+
+      try {
+        // API might not support pagination, so we'll fetch all and paginate client-side
+        // Or use query params if API supports it
+        const response = await api.get<ApiResponse<HelpfulProjectsResponse>>(
+          `/users/${userId}/helpful`
+        );
+
+        if (response.success) {
+          // Store all projects and paginate client-side
+          setAllHelpfulProjects(response.data.projects);
+          setTotalItems(response.data.data_total);
+          setTotalPages(Math.ceil(response.data.data_total / itemsPerPage));
+        } else {
+          // Handle errors
+          if (response.code === 401) {
+            // Not authenticated, clear token
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("accessToken");
+            }
+            setHelpfulError(null); // Don't show error, just don't display section
+          } else if (response.code === 404) {
+            // User not found or no helpful projects
+            setHelpfulProjects([]);
+          } else {
+            setHelpfulError(response.message || "좋아요한 글을 불러오는데 실패했습니다.");
+          }
+        }
+      } catch (err: any) {
+        console.error("Error fetching helpful projects:", err);
+        if (err.code === 401 || err.message === "Unauthorized") {
+          // Not authenticated
+          setHelpfulError(null);
+        } else {
+          setHelpfulError("좋아요한 글을 불러오는데 실패했습니다.");
+        }
+      } finally {
+        setHelpfulLoading(false);
+      }
+    };
+
+    fetchHelpfulProjects();
+  }, []); // Only fetch once on mount
 
   return (
     <div className="min-h-screen bg-white text-zinc-900">
@@ -190,6 +306,129 @@ export default function MainPage() {
               ))}
             </div>
           </section>
+
+          {/* Helpful Projects (Liked Posts) */}
+          {helpfulProjects.length > 0 && (
+            <section>
+              <h2 className="mb-6 text-2xl font-bold text-zinc-800">
+                좋아요한 글
+              </h2>
+              {helpfulLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                </div>
+              ) : helpfulError ? (
+                <div className="text-center py-12 text-zinc-500">{helpfulError}</div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                    {helpfulProjects.map((project) => (
+                      <Link
+                        key={project.project_id}
+                        href={`/post-detail/${project.project_id}`}
+                        className="group cursor-pointer overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+                      >
+                        <div className="aspect-video w-full bg-zinc-100 transition-colors group-hover:bg-orange-50">
+                          {project.project_image ? (
+                            <img
+                              src={project.project_image}
+                              alt={project.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <span className="text-zinc-400 text-sm">이미지 없음</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <div className="mb-2 flex items-center gap-2 flex-wrap">
+                            {project.failure_catagory.slice(0, 2).map((tag, idx) => (
+                              <span
+                                key={idx}
+                                className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                            {project.failure_catagory.length > 2 && (
+                              <span className="text-[10px] text-zinc-400">
+                                +{project.failure_catagory.length - 2}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="mb-1 text-lg font-bold text-zinc-900 group-hover:text-orange-500 line-clamp-2">
+                            {project.name}
+                          </h3>
+                          <div className="flex items-center gap-2 text-xs text-zinc-400 mt-2">
+                            <span>{project.user}</span>
+                            <span>•</span>
+                            <span>{project.period}</span>
+                          </div>
+                          <div className="mt-2 flex items-center gap-2">
+                            {project.is_free === "true" || project.is_free === true ? (
+                              <span className="text-xs font-bold text-green-600">무료</span>
+                            ) : project.sale_status === "SALE" ? (
+                              <span className="text-xs font-bold text-orange-600">
+                                ₩{project.price.toLocaleString()}
+                              </span>
+                            ) : (
+                              <span className="text-xs font-bold text-zinc-400">비공개</span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        &lt;
+                      </button>
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
+                              currentPage === pageNum
+                                ? "bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20"
+                                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-orange-500 hover:border-orange-200"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        &gt;
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
+          )}
         </div>
       </main>
 
