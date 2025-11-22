@@ -7,7 +7,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen bg-white text-zinc-900">
       <Navbar />
-      
+
       <main className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center px-4 text-center">
         <h1 className="mb-4 text-6xl font-extrabold text-orange-500 sm:text-8xl">
           404
@@ -19,7 +19,7 @@ export default function NotFound() {
           요청하신 페이지가 존재하지 않거나, 주소가 변경되었을 수 있습니다.
           입력하신 주소가 정확한지 다시 한 번 확인해 주세요.
         </p>
-        
+
         <Link
           href="/"
           className="rounded-xl bg-orange-500 px-8 py-3 text-lg font-bold text-white transition-all hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-500/20"
