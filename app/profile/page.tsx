@@ -106,7 +106,10 @@ export default function ProfilePage() {
           `/users/${userId}/post`
         );
         if (postsResponse.success) {
-          setPosts(postsResponse.data.projects);
+          const sortedPosts = [...postsResponse.data.projects].sort(
+            (a, b) => b.project_id - a.project_id
+          );
+          setPosts(sortedPosts);
         }
 
         const purchasedResponse = await api.get<UserPurchasedResponse>(

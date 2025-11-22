@@ -69,7 +69,10 @@ export default function UserProfilePage() {
           ApiResponse<{ data_total: number; projects: Project[] }>
         >(`/users/${userId}/post`);
         if (postsResponse.success) {
-          setPosts(postsResponse.data.projects || []);
+          const sortedPosts = [...(postsResponse.data.projects || [])].sort(
+            (a, b) => b.project_id - a.project_id
+          );
+          setPosts(sortedPosts);
         }
       } catch (err) {
         console.error("Failed to fetch profile", err);

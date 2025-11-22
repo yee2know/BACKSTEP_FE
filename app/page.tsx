@@ -68,16 +68,16 @@ export default function MainPage() {
     );
   };
 
-useEffect(() => {
-  if (searchType === "profile") {
-    if (selectedTags.length > 0) {
-      setSelectedTags([]);
+  useEffect(() => {
+    if (searchType === "profile") {
+      if (selectedTags.length > 0) {
+        setSelectedTags([]);
+      }
+      if (isTagPickerOpen) {
+        setIsTagPickerOpen(false);
+      }
     }
-    if (isTagPickerOpen) {
-      setIsTagPickerOpen(false);
-    }
-  }
-}, [searchType, selectedTags, isTagPickerOpen]);
+  }, [searchType, selectedTags, isTagPickerOpen]);
 
   const executeSearch = (
     query: string,
@@ -107,7 +107,9 @@ useEffect(() => {
   };
 
   // Helpful projects state
-  const [allHelpfulProjects, setAllHelpfulProjects] = useState<HelpfulProject[]>([]);
+  const [allHelpfulProjects, setAllHelpfulProjects] = useState<
+    HelpfulProject[]
+  >([]);
   const [helpfulLoading, setHelpfulLoading] = useState(false);
   const [helpfulError, setHelpfulError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -145,14 +147,16 @@ useEffect(() => {
   const getUserIdFromToken = (token: string): string | null => {
     try {
       // JWT tokens have 3 parts separated by dots
-      const parts = token.split('.');
+      const parts = token.split(".");
       if (parts.length !== 3) return null;
 
       // Decode the payload (second part)
       const payload = JSON.parse(atob(parts[1]));
 
       // Try different possible fields for user ID
-      return payload.user_id || payload.userId || payload.id || payload.sub || null;
+      return (
+        payload.user_id || payload.userId || payload.id || payload.sub || null
+      );
     } catch (error) {
       console.error("Error decoding token:", error);
       return null;
@@ -162,14 +166,18 @@ useEffect(() => {
   // Fetch helpful projects
   useEffect(() => {
     const fetchHelpfulProjects = async () => {
-      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null;
       if (!token) {
         // Not logged in, don't show helpful projects
         return;
       }
 
       // Get user ID from token
-      const userId = getUserIdFromToken(token) ||
+      const userId =
+        getUserIdFromToken(token) ||
         (typeof window !== "undefined" ? localStorage.getItem("userId") : null);
 
       if (!userId) {
@@ -205,7 +213,9 @@ useEffect(() => {
             // User not found or no helpful projects
             setAllHelpfulProjects([]);
           } else {
-            setHelpfulError(response.message || "좋아요한 글을 불러오는데 실패했습니다.");
+            setHelpfulError(
+              response.message || "좋아요한 글을 불러오는데 실패했습니다."
+            );
           }
         }
       } catch (err: any) {
@@ -237,18 +247,22 @@ useEffect(() => {
           setPopularPosts(popularResponse.data.projects || []);
         }
 
-        // Fetch recent posts - use same endpoint and sort by project_id descending
-        // Higher project_id = more recent post
-        const recentResponse = await api.get<ApiResponse<ProjectsResponse>>(
-          "/projects/popular"
+        // Fetch recent posts - use /search endpoint to get all posts
+        const recentResponse = await api.post<ApiResponse<{ data_search: any[] }>>(
+          "/search",
+          {
+            type: "project",
+            keyword: "",
+          }
         );
         if (recentResponse.success && recentResponse.data) {
           // Sort by project_id descending (highest ID first = most recent)
-          const sortedRecent = [...(recentResponse.data.projects || [])].sort(
-            (a, b) => b.project_id - a.project_id
-          );
+          const searchResults = recentResponse.data.data_search || [];
+          const sortedRecent = searchResults
+            .filter((item: any) => typeof item.project_id === "number")
+            .sort((a: any, b: any) => b.project_id - a.project_id);
           // Take only first 5
-          setRecentPosts(sortedRecent.slice(0, 5));
+          setRecentPosts(sortedRecent.slice(0, 5) as Project[]);
         }
       } catch (error) {
         console.error("Failed to fetch posts:", error);
@@ -268,7 +282,10 @@ useEffect(() => {
     e.preventDefault();
     e.stopPropagation();
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null;
     if (!token) {
       alert("로그인이 필요합니다.");
       return;
@@ -285,16 +302,24 @@ useEffect(() => {
       await api.delete<ApiResponse>(`/users/projects/${projectId}/helpful`);
 
       // Remove from local state
-      setAllHelpfulProjects((prev) => prev.filter((p) => p.project_id !== projectId));
+      setAllHelpfulProjects((prev) =>
+        prev.filter((p) => p.project_id !== projectId)
+      );
       setTotalItems((prev) => Math.max(0, prev - 1));
-      setTotalPages((prev) => Math.ceil(Math.max(0, totalItems - 1) / itemsPerPage));
+      setTotalPages((prev) =>
+        Math.ceil(Math.max(0, totalItems - 1) / itemsPerPage)
+      );
     } catch (err: any) {
       console.error("Unlike error:", err);
       if (err.code === 404) {
         // Already removed, just update local state
-        setAllHelpfulProjects((prev) => prev.filter((p) => p.project_id !== projectId));
+        setAllHelpfulProjects((prev) =>
+          prev.filter((p) => p.project_id !== projectId)
+        );
         setTotalItems((prev) => Math.max(0, prev - 1));
-        setTotalPages((prev) => Math.ceil(Math.max(0, totalItems - 1) / itemsPerPage));
+        setTotalPages((prev) =>
+          Math.ceil(Math.max(0, totalItems - 1) / itemsPerPage)
+        );
       } else {
         alert("좋아요 취소 중 오류가 발생했습니다.");
       }
@@ -324,8 +349,9 @@ useEffect(() => {
         {/* Hero Section (Scrolls naturally) */}
         <div className="mt-[20vh] mb-8 flex flex-col items-center px-4">
           <h1
-            className={`text-center text-5xl font-extrabold tracking-tight text-orange-500 sm:text-6xl transition-opacity duration-300 ${isScrolled ? "opacity-0" : "opacity-100"
-              }`}
+            className={`text-center text-5xl font-extrabold tracking-tight text-orange-500 sm:text-6xl transition-opacity duration-300 ${
+              isScrolled ? "opacity-0" : "opacity-100"
+            }`}
           >
             Cistus
           </h1>
@@ -333,8 +359,9 @@ useEffect(() => {
 
         {/* Hero Search Container */}
         <div
-          className={`flex w-full flex-col items-center px-4 transition-opacity duration-300 ${isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
-            }`}
+          className={`flex w-full flex-col items-center px-4 transition-opacity duration-300 ${
+            isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
+          }`}
         >
           <form
             onSubmit={handleHeroSearch}
@@ -348,8 +375,9 @@ useEffect(() => {
               >
                 <span>{searchType === "post" ? "글" : "프로필"}</span>
                 <ChevronDownIcon
-                  className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
-                    }`}
+                  className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${
+                    isDropdownOpen ? "rotate-180" : ""
+                  }`}
                 />
               </button>
 
@@ -361,10 +389,11 @@ useEffect(() => {
                       setSearchType("post");
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${searchType === "post"
-                      ? "bg-orange-50 text-orange-600"
-                      : "text-zinc-600 hover:bg-zinc-50"
-                      }`}
+                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${
+                      searchType === "post"
+                        ? "bg-orange-50 text-orange-600"
+                        : "text-zinc-600 hover:bg-zinc-50"
+                    }`}
                   >
                     글
                   </button>
@@ -374,10 +403,11 @@ useEffect(() => {
                       setSearchType("profile");
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${searchType === "profile"
-                      ? "bg-orange-50 text-orange-600"
-                      : "text-zinc-600 hover:bg-zinc-50"
-                      }`}
+                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${
+                      searchType === "profile"
+                        ? "bg-orange-50 text-orange-600"
+                        : "text-zinc-600 hover:bg-zinc-50"
+                    }`}
                   >
                     프로필
                   </button>
@@ -503,9 +533,7 @@ useEffect(() => {
         <div className="w-full max-w-6xl space-y-12 px-6 pb-20">
           {/* Weekly Popular Posts */}
           <section>
-            <h2 className="mb-6 text-2xl font-bold text-zinc-800">
-              인기 글
-            </h2>
+            <h2 className="mb-6 text-2xl font-bold text-zinc-800">인기 글</h2>
             {postsLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
@@ -527,7 +555,9 @@ useEffect(() => {
                         />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center">
-                          <span className="text-zinc-400 text-sm">이미지 없음</span>
+                          <span className="text-zinc-400 text-sm">
+                            이미지 없음
+                          </span>
                         </div>
                       )}
                     </div>
@@ -599,7 +629,9 @@ useEffect(() => {
                         />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center">
-                          <span className="text-zinc-400 text-sm">이미지 없음</span>
+                          <span className="text-zinc-400 text-sm">
+                            이미지 없음
+                          </span>
                         </div>
                       )}
                     </div>
@@ -656,7 +688,9 @@ useEffect(() => {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
                 </div>
               ) : helpfulError ? (
-                <div className="text-center py-12 text-zinc-500">{helpfulError}</div>
+                <div className="text-center py-12 text-zinc-500">
+                  {helpfulError}
+                </div>
               ) : (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -678,20 +712,24 @@ useEffect(() => {
                               />
                             ) : (
                               <div className="h-full w-full flex items-center justify-center">
-                                <span className="text-zinc-400 text-sm">이미지 없음</span>
+                                <span className="text-zinc-400 text-sm">
+                                  이미지 없음
+                                </span>
                               </div>
                             )}
                           </div>
                           <div className="p-4">
                             <div className="mb-2 flex items-center gap-2 flex-wrap">
-                              {project.failure_catagory.slice(0, 2).map((tag, idx) => (
-                                <span
-                                  key={idx}
-                                  className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
-                                >
-                                  #{tag}
-                                </span>
-                              ))}
+                              {project.failure_catagory
+                                .slice(0, 2)
+                                .map((tag, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
+                                  >
+                                    #{tag}
+                                  </span>
+                                ))}
                               {project.failure_catagory.length > 2 && (
                                 <span className="text-[10px] text-zinc-400">
                                   +{project.failure_catagory.length - 2}
@@ -708,14 +746,19 @@ useEffect(() => {
                             </div>
                             <div className="mt-2 flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                {project.is_free === "true" || project.is_free === true ? (
-                                  <span className="text-xs font-bold text-green-600">무료</span>
+                                {project.is_free === "true" ||
+                                project.is_free === true ? (
+                                  <span className="text-xs font-bold text-green-600">
+                                    무료
+                                  </span>
                                 ) : project.sale_status === "SALE" ? (
                                   <span className="text-xs font-bold text-orange-600">
                                     ₩{project.price.toLocaleString()}
                                   </span>
                                 ) : (
-                                  <span className="text-xs font-bold text-zinc-400">비공개</span>
+                                  <span className="text-xs font-bold text-zinc-400">
+                                    비공개
+                                  </span>
                                 )}
                               </div>
                               <div className="flex items-center gap-1 text-xs font-medium text-zinc-500">
@@ -730,15 +773,21 @@ useEffect(() => {
                           type="button"
                           onClick={(e) => handleUnlike(e, project.project_id)}
                           disabled={likingProjects.has(project.project_id)}
-                          className={`absolute top-4 right-4 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm p-2 shadow-md transition-all hover:bg-white hover:scale-110 active:scale-95 ${likingProjects.has(project.project_id)
-                            ? "opacity-50 cursor-not-allowed"
-                            : "cursor-pointer"
-                            }`}
-                          style={{ pointerEvents: likingProjects.has(project.project_id) ? "none" : "auto" }}
+                          className={`absolute top-4 right-4 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm p-2 shadow-md transition-all hover:bg-white hover:scale-110 active:scale-95 ${
+                            likingProjects.has(project.project_id)
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer"
+                          }`}
+                          style={{
+                            pointerEvents: likingProjects.has(
+                              project.project_id
+                            )
+                              ? "none"
+                              : "auto",
+                          }}
                         >
                           <HeartIcon
-                            className={`h-5 w-5 transition-colors ${"text-orange-500 fill-orange-500"
-                              }`}
+                            className={`h-5 w-5 transition-colors ${"text-orange-500 fill-orange-500"}`}
                           />
                         </button>
                       </div>
@@ -749,38 +798,48 @@ useEffect(() => {
                   {totalPages > 1 && (
                     <div className="flex justify-center items-center gap-2">
                       <button
-                        onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(1, prev - 1))
+                        }
                         disabled={currentPage === 1}
                         className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         &lt;
                       </button>
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() => setCurrentPage(pageNum)}
-                            className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${currentPage === pageNum
-                              ? "bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20"
-                              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-orange-500 hover:border-orange-200"
+                      {Array.from(
+                        { length: Math.min(5, totalPages) },
+                        (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
+                                currentPage === pageNum
+                                  ? "bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20"
+                                  : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-orange-500 hover:border-orange-200"
                               }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        }
+                      )}
                       <button
-                        onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(totalPages, prev + 1)
+                          )
+                        }
                         disabled={currentPage === totalPages}
                         className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
