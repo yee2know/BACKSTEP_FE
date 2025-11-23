@@ -377,9 +377,8 @@ export default function MainPage() {
         {/* Hero Section (Scrolls naturally) */}
         <div className="mt-[20vh] mb-8 flex flex-col items-center px-4 relative z-10">
           <h1
-            className={`text-center text-5xl font-extrabold tracking-tight text-orange-500 sm:text-6xl transition-opacity duration-300 ${
-              isScrolled ? "opacity-0" : "opacity-100"
-            }`}
+            className={`text-center text-5xl font-extrabold tracking-tight text-orange-500 sm:text-6xl transition-opacity duration-300 ${isScrolled ? "opacity-0" : "opacity-100"
+              }`}
           >
             Cistus
           </h1>
@@ -387,9 +386,8 @@ export default function MainPage() {
 
         {/* Hero Search Container */}
         <div
-          className={`flex w-full flex-col items-center px-4 relative z-10 transition-opacity duration-300 ${
-            isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
+          className={`flex w-full flex-col items-center px-4 relative z-10 transition-opacity duration-300 ${isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
+            }`}
         >
           <form
             onSubmit={handleHeroSearch}
@@ -403,9 +401,8 @@ export default function MainPage() {
               >
                 <span>{searchType === "post" ? "글" : "프로필"}</span>
                 <ChevronDownIcon
-                  className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${
-                    isDropdownOpen ? "rotate-180" : ""
-                  }`}
+                  className={`h-4 w-4 text-zinc-400 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
+                    }`}
                 />
               </button>
 
@@ -417,11 +414,10 @@ export default function MainPage() {
                       setSearchType("post");
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${
-                      searchType === "post"
-                        ? "bg-orange-50 text-orange-600"
-                        : "text-zinc-600 hover:bg-zinc-50"
-                    }`}
+                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${searchType === "post"
+                      ? "bg-orange-50 text-orange-600"
+                      : "text-zinc-600 hover:bg-zinc-50"
+                      }`}
                   >
                     글
                   </button>
@@ -431,11 +427,10 @@ export default function MainPage() {
                       setSearchType("profile");
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${
-                      searchType === "profile"
-                        ? "bg-orange-50 text-orange-600"
-                        : "text-zinc-600 hover:bg-zinc-50"
-                    }`}
+                    className={`w-full rounded-lg px-4 py-2.5 text-left text-base font-medium transition-colors ${searchType === "profile"
+                      ? "bg-orange-50 text-orange-600"
+                      : "text-zinc-600 hover:bg-zinc-50"
+                      }`}
                   >
                     프로필
                   </button>
@@ -475,11 +470,10 @@ export default function MainPage() {
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(tag)}
-                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                        isSelected
-                          ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
-                          : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
-                      }`}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${isSelected
+                        ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
+                        : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
+                        }`}
                     >
                       #{tag}
                     </button>
@@ -493,72 +487,78 @@ export default function MainPage() {
                   태그 더 보기
                 </button>
               </div>
-
-              {isTagPickerOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-                  <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
-                    <div className="mb-4 flex items-center justify-between">
-                      <h2 className="text-lg font-bold text-zinc-900">
-                        실패 태그 선택
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={() => setIsTagPickerOpen(false)}
-                        className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-500 hover:bg-zinc-200"
-                      >
-                        닫기
-                      </button>
-                    </div>
-                    <div className="mb-4 flex flex-wrap gap-2">
-                      {AVAILABLE_TAGS.map((tag) => {
-                        const isSelected = selectedTags.includes(tag);
-                        return (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => toggleTag(tag)}
-                            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                              isSelected
-                                ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
-                                : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
-                            }`}
-                          >
-                            #{tag}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTags([])}
-                        className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-500 hover:border-zinc-400"
-                      >
-                        선택 초기화
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsTagPickerOpen(false);
-                          executeSearch(searchQuery, searchType, selectedTags);
-                        }}
-                        className="rounded-xl bg-orange-500 px-6 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-600"
-                      >
-                        선택 후 검색
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </div>
+
+        {/* Tag Picker Modal - Moved outside of form */}
+        {isTagPickerOpen && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 px-4"
+            onClick={() => setIsTagPickerOpen(false)}
+          >
+            <div
+              className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-zinc-900">
+                  실패 태그 선택
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsTagPickerOpen(false)}
+                  className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-500 hover:bg-zinc-200"
+                >
+                  닫기
+                </button>
+              </div>
+              <div className="mb-4 flex flex-wrap gap-2">
+                {AVAILABLE_TAGS.map((tag) => {
+                  const isSelected = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${isSelected
+                        ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
+                        : "bg-zinc-100 text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
+                        }`}
+                    >
+                      #{tag}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTags([])}
+                  className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-500 hover:border-zinc-400"
+                >
+                  선택 초기화
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTagPickerOpen(false);
+                    executeSearch(searchQuery, searchType, selectedTags);
+                  }}
+                  className="rounded-xl bg-orange-500 px-6 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-600"
+                >
+                  선택 후 검색
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Spacer to separate posts from the hero area visually */}
         <div className="h-24"></div>
 
         {/* Content Sections */}
-        <div className="w-full max-w-6xl space-y-12 px-6 pb-20 relative z-10">
+        <div className="w-full max-w-6xl space-y-12 px-6 pb-20">
           {/* Weekly Popular Posts */}
           <section>
             <h2 className="mb-6 text-2xl font-bold text-zinc-800">인기 글</h2>
@@ -808,7 +808,7 @@ export default function MainPage() {
                               </div>
                               <div className="flex items-center gap-2">
                                 {project.is_free === "true" ||
-                                project.is_free === true ? (
+                                  project.is_free === true ? (
                                   <span className="text-xs font-bold text-green-600">
                                     무료
                                   </span>
@@ -826,11 +826,10 @@ export default function MainPage() {
                           type="button"
                           onClick={(e) => handleUnlike(e, project.project_id)}
                           disabled={likingProjects.has(project.project_id)}
-                          className={`absolute top-4 right-4 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm p-2 shadow-md transition-all hover:bg-white hover:scale-110 active:scale-95 ${
-                            likingProjects.has(project.project_id)
-                              ? "opacity-50 cursor-not-allowed"
-                              : "cursor-pointer"
-                          }`}
+                          className={`absolute top-4 right-4 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm p-2 shadow-md transition-all hover:bg-white hover:scale-110 active:scale-95 ${likingProjects.has(project.project_id)
+                            ? "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer"
+                            }`}
                           style={{
                             pointerEvents: likingProjects.has(
                               project.project_id
@@ -876,11 +875,10 @@ export default function MainPage() {
                             <button
                               key={pageNum}
                               onClick={() => setCurrentPage(pageNum)}
-                              className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
-                                currentPage === pageNum
-                                  ? "bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20"
-                                  : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-orange-500 hover:border-orange-200"
-                              }`}
+                              className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${currentPage === pageNum
+                                ? "bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20"
+                                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-orange-500 hover:border-orange-200"
+                                }`}
                             >
                               {pageNum}
                             </button>
@@ -905,16 +903,16 @@ export default function MainPage() {
             </section>
           )}
         </div>
-      </main>
+      </main >
 
       {/* Floating Action Button */}
-      <Link
+      < Link
         href="/post-publish"
         className="fixed bottom-8 right-8 z-50 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-500/30 transition-all hover:scale-110 hover:bg-orange-600 hover:shadow-orange-500/50"
       >
         <PencilIcon className="h-6 w-6" />
-      </Link>
-    </div>
+      </Link >
+    </div >
   );
 }
 
