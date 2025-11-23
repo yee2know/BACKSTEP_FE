@@ -95,10 +95,47 @@ backstep_fe/
 
 ## 👥 팀원 (Contributors)
 
-- **Frontend**: [Github Profile]
-- **Backend**: [Github Profile]
-- **Design**: [Name]
+| Role              | Name       | GitHub                                         |
+| :---------------- | :--------- | :--------------------------------------------- |
+| **Lead Frontend** | **신효환** | [@clwmfksek](https://github.com/clwmfksek)     |
+| **Frontend**      | **박재관** | [@jaegwan0319](https://github.com/jaegwan0319) |
+| **Frontend**      | **강성찬** | [@tjdcks_12](https://github.com/tjdcks-dass)   |
+
+## 🔄 협업 방식 (Work Flow)
+
+본 프로젝트는 **GitHub Flow** 전략을 기반으로 협업을 진행합니다.
+
+### 1. Branch Strategy
+
+- **main**: 배포 가능한 상태의 코드를 유지합니다.
+- **feat/issue-number**: 새로운 기능 개발 시 생성합니다. (예: `feat/#1`)
+- **fix/issue-number**: 버그 수정 시 생성합니다. (예: `fix/#2`)
+
+### 2. Commit Convention
+
+- `feat`: 새로운 기능 추가
+- `fix`: 버그 수정
+- `docs`: 문서 수정
+- `style`: 코드 포맷팅, 세미콜론 누락 등 (코드 변경 없음)
+- `refactor`: 코드 리팩토링
+- `test`: 테스트 코드 추가/수정
+- `chore`: 빌드 업무 수정, 패키지 매니저 수정 등
+
+### 3. Work Flow Process
+
+1. **Issue 생성**: 개발할 기능이나 수정할 버그에 대한 이슈를 생성합니다.
+2. **Branch 생성**: `main` 브랜치에서 새로운 작업 브랜치를 생성합니다.
+3. **개발 및 Commit**: 작업을 진행하며 의미 있는 단위로 커밋합니다.
+4. **Pull Request (PR)**: 작업이 완료되면 `main` 브랜치로 PR을 생성합니다.
+5. **Code Review**: 최소 1명의 팀원들의 리뷰를 받고 피드백을 반영합니다.
+6. **Merge**: 리뷰가 승인되면 `main` 브랜치로 Merge 합니다.
+
+## 🤝 Contributing
+
+1. 이 저장소를 Fork 합니다.
+2. 새로운 Feature Branch를 생성합니다 (`git checkout -b feat/AmazingFeature`).
+3. 변경 사항을 Commit 합니다 (`git commit -m 'Add some AmazingFeature'`).
+4. Branch에 Push 합니다 (`git push origin feat/AmazingFeature`).
+5. Pull Request를 요청합니다.
 
 ---
-
-© 2025 X-THON Team 11. All Rights Reserved.
