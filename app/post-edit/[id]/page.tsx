@@ -364,34 +364,59 @@ export default function PostEditPage() {
         <header className="mb-16 mx-auto max-w-4xl">
           {/* 0. Thumbnail Upload */}
           <div className="mb-8">
-            <div className="group relative flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 transition-all hover:border-orange-500 hover:bg-orange-50">
+            <div
+              className={`group relative flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl transition-all ${
+                post.thumbnail
+                  ? "border-0 bg-zinc-900"
+                  : "border-2 border-dashed border-zinc-200 bg-zinc-50 hover:border-orange-500 hover:bg-orange-50"
+              }`}
+            >
               <input
                 type="file"
                 accept="image/*"
-                className="absolute inset-0 z-10 cursor-pointer opacity-0"
+                className="absolute inset-0 z-20 cursor-pointer opacity-0"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
+                    // Preview immediately
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      handleInputChange("thumbnail", reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+
                     uploadProjectImage(file);
                   }
                 }}
               />
-              {post.thumbnail ? (
-                <img
-                  src={post.thumbnail}
-                  alt="Thumbnail"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex flex-col items-center gap-2 text-zinc-400 transition-colors group-hover:text-orange-500">
+              {post.thumbnail && (
+                <>
+                  <img
+                    src={post.thumbnail}
+                    alt="Thumbnail"
+                    className="absolute inset-0 z-0 h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 z-0 bg-black/30 transition-colors group-hover:bg-black/40" />
+                </>
+              )}
+
+              <div className="relative z-10">
+                <div
+                  className={`flex flex-col items-center gap-2 transition-colors ${
+                    post.thumbnail
+                      ? "text-white/90 group-hover:text-white"
+                      : "text-zinc-400 group-hover:text-orange-500"
+                  }`}
+                >
                   <ImageIcon className="h-12 w-12" />
                   <span className="text-sm font-bold">
                     대표 사진을 업로드하세요
                   </span>
                 </div>
-              )}
+              </div>
+
               {(isPresigning || isUploading) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/80">
                   <div className="flex flex-col items-center gap-2">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
                     <span className="text-sm font-bold text-orange-500">

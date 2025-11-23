@@ -277,13 +277,12 @@ export default function MainPage() {
         }
 
         // Fetch recent posts - use /search endpoint to get all posts
-        const recentResponse = await api.post<ApiResponse<{ data_search: any[] }>>(
-          "/search",
-          {
-            type: "project",
-            keyword: "",
-          }
-        );
+        const recentResponse = await api.post<
+          ApiResponse<{ data_search: any[] }>
+        >("/search", {
+          type: "project",
+          keyword: "",
+        });
         if (recentResponse.success && recentResponse.data) {
           // Sort by project_id descending (highest ID first = most recent)
           const searchResults = recentResponse.data.data_search || [];
@@ -374,9 +373,9 @@ export default function MainPage() {
       />
 
       {/* Main Content Flow */}
-      <main className="flex flex-col items-center">
+      <main className="flex flex-col items-center relative">
         {/* Hero Section (Scrolls naturally) */}
-        <div className="mt-[20vh] mb-8 flex flex-col items-center px-4">
+        <div className="mt-[20vh] mb-8 flex flex-col items-center px-4 relative z-10">
           <h1
             className={`text-center text-5xl font-extrabold tracking-tight text-orange-500 sm:text-6xl transition-opacity duration-300 ${
               isScrolled ? "opacity-0" : "opacity-100"
@@ -388,7 +387,7 @@ export default function MainPage() {
 
         {/* Hero Search Container */}
         <div
-          className={`flex w-full flex-col items-center px-4 transition-opacity duration-300 ${
+          className={`flex w-full flex-col items-center px-4 relative z-10 transition-opacity duration-300 ${
             isScrolled ? "opacity-0 pointer-events-none" : "opacity-100"
           }`}
         >
@@ -559,7 +558,7 @@ export default function MainPage() {
         <div className="h-24"></div>
 
         {/* Content Sections */}
-        <div className="w-full max-w-6xl space-y-12 px-6 pb-20">
+        <div className="w-full max-w-6xl space-y-12 px-6 pb-20 relative z-10">
           {/* Weekly Popular Posts */}
           <section>
             <h2 className="mb-6 text-2xl font-bold text-zinc-800">인기 글</h2>
@@ -691,14 +690,10 @@ export default function MainPage() {
                       )}
                     </div>
                     <div className="p-4">
-                      <div className="mb-2 flex items-center justify-between">
+                      <div className="mb-2 flex items-center">
                         <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-600">
                           New
                         </span>
-                        <div className="flex items-center gap-1 text-xs text-zinc-500">
-                          <HeartIcon className="h-3 w-3 text-orange-500 fill-orange-500" />
-                          <span>{post.helpful_count || 0}</span>
-                        </div>
                       </div>
                       <h3 className="mb-1 text-lg font-bold text-zinc-900 group-hover:text-orange-500 line-clamp-2">
                         {post.name}
@@ -821,11 +816,7 @@ export default function MainPage() {
                                   <span className="text-xs font-bold text-orange-600">
                                     ₩{project.price.toLocaleString()}
                                   </span>
-                                ) : (
-                                  <span className="text-xs font-bold text-zinc-400">
-                                    비공개
-                                  </span>
-                                )}
+                                ) : null}
                               </div>
                             </div>
                           </div>

@@ -39,7 +39,7 @@ export default function ProfileEditPage() {
   const [user, setUser] = useState({
     nickname: "Cistus User",
     email: "user@example.com",
-    bio: "안녕하세요! 프론트엔드 개발에 관심이 많은 개발자입니다.\nReact와 Next.js를 주로 사용하며, 사용자 경험을 개선하는 UI 디자인에 흥미가 있습니다.\n꾸준히 기록하고 성장하는 개발자가 되고 싶습니다.",
+    bio: "",
   });
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -123,7 +123,9 @@ export default function ProfileEditPage() {
 
       setUploadedInfo({ key, publicUrl });
     } catch (error) {
-      setUploadError("이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해주세요.");
+      setUploadError(
+        "이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해주세요."
+      );
       throw error;
     } finally {
       setIsPresigning(false);
@@ -141,14 +143,16 @@ export default function ProfileEditPage() {
         const id = meResponse.data.user.user_id;
         setUserId(id);
 
-        const detailResponse = await api.get<UserDetailResponse>(`/users/${id}`);
+        const detailResponse = await api.get<UserDetailResponse>(
+          `/users/${id}`
+        );
         const detail = detailResponse.data.user;
 
         setUser((prev) => ({
           ...prev,
           nickname: detail.nickname || detail.name || prev.nickname,
           email: detail.email,
-          bio: detail.bio ?? prev.bio,
+          bio: detail.bio ?? "",
         }));
 
         if (detail.profile_image) {
@@ -311,7 +315,9 @@ export default function ProfileEditPage() {
                   setSuccessMessage("프로필이 성공적으로 저장되었습니다.");
                   router.replace("/profile");
                 } catch (error) {
-                  setSaveError("프로필 저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+                  setSaveError(
+                    "프로필 저장에 실패했습니다. 잠시 후 다시 시도해주세요."
+                  );
                 } finally {
                   setIsSaving(false);
                 }
