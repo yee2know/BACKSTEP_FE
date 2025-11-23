@@ -37,8 +37,6 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [posts, setPosts] = useState<Project[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 2;
 
   useEffect(() => {
     const userId = params?.userId;
@@ -54,21 +52,27 @@ export default function UserProfilePage() {
         const meResponse = await api.get<
           ApiResponse<{ user: { user_id: number } }>
         >("/users/me");
-        if (meResponse.success && `${meResponse.data.user.user_id}` === userId) {
+        if (
+          meResponse.success &&
+          `${meResponse.data.user.user_id}` === userId
+        ) {
           router.replace("/profile");
           return;
         }
 
-        const response = await api.get<
-          ApiResponse<{ user: UserDetail }>
-        >(`/users/${userId}`);
+        const response = await api.get<ApiResponse<{ user: UserDetail }>>(
+          `/users/${userId}`
+        );
         setUser(response.data.user);
 
         const postsResponse = await api.get<
           ApiResponse<{ data_total: number; projects: Project[] }>
         >(`/users/${userId}/post`);
         if (postsResponse.success) {
-          setPosts(postsResponse.data.projects || []);
+          const sortedPosts = [...(postsResponse.data.projects || [])].sort(
+            (a, b) => b.project_id - a.project_id
+          );
+          setPosts(sortedPosts);
         }
       } catch (err) {
         console.error("Failed to fetch profile", err);
@@ -168,123 +172,72 @@ export default function UserProfilePage() {
                     </div>
 
                     {posts.length > 0 ? (
-                      <div className="space-y-6">
-                        {posts
-                          .slice(
-                            (currentPage - 1) * itemsPerPage,
-                            currentPage * itemsPerPage
-                          )
-                          .map((post) => (
-                            <Link
-                              href={`/post-detail/${post.project_id}`}
-                              key={post.project_id}
-                              className="group relative flex flex-col gap-6 overflow-hidden rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:flex-row"
-                            >
-                              <div className="aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-40">
-                                {post.project_image ? (
-                                  <img
-                                    src={post.project_image}
-                                    alt={post.name}
-                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                  />
-                                ) : (
-                                  <div className="h-full w-full bg-zinc-100 transition-colors group-hover:bg-orange-50" />
-                                )}
-                              </div>
-                              <div className="flex flex-1 flex-col justify-between py-1">
-                                <div>
-                                  <div className="mb-2 flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-xs">
-                                      <span className="font-bold text-orange-500">
-                                        {post.failure_catagory[0] || "Project"}
-                                      </span>
-                                      <span className="text-zinc-400">
-                                        • {post.period}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-xs font-medium text-zinc-500">
-                                      <svg
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      >
-                                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-                                      </svg>
-                                      <span>{post.helpful_count}</span>
-                                    </div>
+                      <div className="space-y-6 max-h-[320px] overflow-y-auto pr-2 scrollbar-hide">
+                        {posts.map((post) => (
+                          <Link
+                            href={`/post-detail/${post.project_id}`}
+                            key={post.project_id}
+                            className="group relative flex flex-col gap-6 overflow-hidden rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:flex-row"
+                          >
+                            <div className="aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:w-40">
+                              {post.project_image ? (
+                                <img
+                                  src={post.project_image}
+                                  alt={post.name}
+                                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
+                              ) : (
+                                <div className="h-full w-full bg-zinc-100 transition-colors group-hover:bg-orange-50" />
+                              )}
+                            </div>
+                            <div className="flex flex-1 flex-col justify-between py-1">
+                              <div>
+                                <div className="mb-2 flex items-center justify-between">
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <span className="font-bold text-orange-500">
+                                      {post.failure_catagory[0] || "Project"}
+                                    </span>
+                                    <span className="text-zinc-400">
+                                      • {post.period}
+                                    </span>
                                   </div>
-                                  <h3 className="mb-2 text-lg font-bold leading-tight text-zinc-900 transition-colors group-hover:text-orange-500">
-                                    {post.name}
-                                  </h3>
-                                  <div className="flex flex-wrap gap-1">
-                                    {post.failure_catagory.slice(1).map((cat) => (
-                                      <span
-                                        key={cat}
-                                        className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500"
-                                      >
-                                        #{cat}
-                                      </span>
-                                    ))}
+                                  <div className="flex items-center gap-1 text-xs font-medium text-zinc-500">
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                                    </svg>
+                                    <span>{post.helpful_count}</span>
                                   </div>
                                 </div>
+                                <h3 className="mb-2 text-lg font-bold leading-tight text-zinc-900 transition-colors group-hover:text-orange-500">
+                                  {post.name}
+                                </h3>
+                                <div className="flex flex-wrap gap-1">
+                                  {post.failure_catagory.slice(1).map((cat) => (
+                                    <span
+                                      key={cat}
+                                      className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500"
+                                    >
+                                      #{cat}
+                                    </span>
+                                  ))}
+                                </div>
                               </div>
-                            </Link>
-                          ))}
+                            </div>
+                          </Link>
+                        ))}
                       </div>
                     ) : (
                       <div className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 text-zinc-400">
                         작성한 글이 없습니다.
-                      </div>
-                    )}
-
-                    {Math.ceil(posts.length / itemsPerPage) > 1 && (
-                      <div className="mt-6 flex justify-center gap-2">
-                        <button
-                          onClick={() =>
-                            setCurrentPage((prev) => Math.max(1, prev - 1))
-                          }
-                          disabled={currentPage === 1}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          &lt;
-                        </button>
-                        {Array.from(
-                          { length: Math.ceil(posts.length / itemsPerPage) },
-                          (_, i) => i + 1
-                        ).map((page) => (
-                          <button
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
-                              currentPage === page
-                                ? "bg-orange-500 text-white shadow-md shadow-orange-500/20"
-                                : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-orange-500 hover:border-orange-200"
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        ))}
-                        <button
-                          onClick={() =>
-                            setCurrentPage((prev) =>
-                              Math.min(
-                                Math.ceil(posts.length / itemsPerPage),
-                                prev + 1
-                              )
-                            )
-                          }
-                          disabled={
-                            currentPage === Math.ceil(posts.length / itemsPerPage)
-                          }
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          &gt;
-                        </button>
                       </div>
                     )}
                   </div>
@@ -297,4 +250,3 @@ export default function UserProfilePage() {
     </div>
   );
 }
-
