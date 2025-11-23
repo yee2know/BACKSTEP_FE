@@ -121,8 +121,8 @@ export default function PostDetailPage() {
           const visibility = isFree
             ? "free"
             : data.sale_status === "SALE" || data.sale_status === "ONSALE"
-              ? "paid"
-              : "private";
+            ? "paid"
+            : "private";
 
           setPost({
             title: data.name,
@@ -176,6 +176,13 @@ export default function PostDetailPage() {
 
     fetchPost();
   }, [id]);
+
+  // Check if user is author and unlock if so
+  useEffect(() => {
+    if (post && currentUserId && post.authorId === currentUserId) {
+      setIsUnlocked(true);
+    }
+  }, [post, currentUserId]);
 
   const handlePurchase = async () => {
     if (!post) return;
@@ -409,21 +416,24 @@ export default function PostDetailPage() {
                 type="button"
                 onClick={handleLike}
                 disabled={isLiking}
-                className={`group flex flex-col items-center justify-center rounded-2xl bg-zinc-50 px-4 py-3 transition-all hover:bg-orange-50 hover:scale-105 active:scale-95 ${isLiking ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                  }`}
+                className={`group flex flex-col items-center justify-center rounded-2xl bg-zinc-50 px-4 py-3 transition-all hover:bg-orange-50 hover:scale-105 active:scale-95 ${
+                  isLiking ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                }`}
                 style={{ pointerEvents: isLiking ? "none" : "auto" }}
               >
                 <HeartIcon
-                  className={`h-7 w-7 transition-colors ${isLiked
-                    ? "text-orange-500 fill-orange-500"
-                    : "text-zinc-400 group-hover:text-orange-500 fill-transparent group-hover:fill-orange-500"
-                    }`}
+                  className={`h-7 w-7 transition-colors ${
+                    isLiked
+                      ? "text-orange-500 fill-orange-500"
+                      : "text-zinc-400 group-hover:text-orange-500 fill-transparent group-hover:fill-orange-500"
+                  }`}
                 />
                 <span
-                  className={`mt-1 text-xs font-bold transition-colors ${isLiked
-                    ? "text-orange-600"
-                    : "text-zinc-500 group-hover:text-orange-600"
-                    }`}
+                  className={`mt-1 text-xs font-bold transition-colors ${
+                    isLiked
+                      ? "text-orange-600"
+                      : "text-zinc-500 group-hover:text-orange-600"
+                  }`}
                 >
                   {post.likes}
                 </span>

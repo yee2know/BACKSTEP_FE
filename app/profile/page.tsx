@@ -132,8 +132,7 @@ export default function ProfilePage() {
   }, []);
 
   const defaultBio = useMemo(
-    () =>
-      "안녕하세요! 프론트엔드 개발에 관심이 많은 개발자입니다. React와 Next.js를 주로 사용하며, 사용자 경험을 개선하는 UI 디자인에 흥미가 있습니다. 꾸준히 기록하고 성장하는 개발자가 되고 싶습니다.",
+    () => "프로필 편집을 통해 자기소개를 등록해주세요.",
     []
   );
 
@@ -191,7 +190,11 @@ export default function ProfilePage() {
                 ) : null}
 
                 {/* Bio */}
-                <p className="mb-8 leading-relaxed text-sm text-zinc-600 w-full">
+                <p
+                  className={`mb-8 leading-relaxed text-sm w-full ${
+                    user?.bio?.trim() ? "text-zinc-600" : "text-zinc-400"
+                  }`}
+                >
                   {user?.bio?.trim() ? user.bio : defaultBio}
                 </p>
 

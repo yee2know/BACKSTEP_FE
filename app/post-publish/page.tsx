@@ -534,9 +534,10 @@ export default function PostPublishPage() {
                   <input
                     type="number"
                     value={post.price}
-                    onChange={(e) =>
-                      handleInputChange("price", parseInt(e.target.value) || 0)
-                    }
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      handleInputChange("price", val < 0 ? 0 : val);
+                    }}
                     placeholder="0"
                     className="w-20 border-b border-zinc-300 bg-transparent text-right font-bold text-zinc-900 focus:border-orange-500 focus:outline-none"
                   />
