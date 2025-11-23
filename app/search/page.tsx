@@ -147,7 +147,7 @@ function SearchPageContent() {
         console.error("Search error:", err);
         setError(
           err?.message ||
-            "검색 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+          "검색 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
         );
         setResults([]);
         setTotalResults(0);
@@ -324,11 +324,10 @@ function SearchPageContent() {
                     key={tag}
                     type="button"
                     onClick={() => toggleCategory(tag)}
-                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                      isSelected
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${isSelected
                         ? "bg-orange-500 text-white shadow-md shadow-orange-500/30"
                         : "bg-white text-zinc-600 hover:bg-orange-100 hover:text-orange-600"
-                    }`}
+                      }`}
                   >
                     #{tag}
                   </button>
@@ -434,11 +433,10 @@ function FilterButton({
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-        isActive
+      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${isActive
           ? "bg-white text-orange-600 shadow-sm"
           : "text-zinc-500 hover:text-zinc-700"
-      }`}
+        }`}
     >
       {label}
     </button>
@@ -454,8 +452,8 @@ function ProjectResultCard({ project }: { project: SearchProjectResult }) {
   const priceLabel = isFree
     ? "무료"
     : isPaid
-    ? `₩${project.price.toLocaleString()}`
-    : "비공개";
+      ? `₩${project.price.toLocaleString()}`
+      : "비공개";
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
@@ -476,16 +474,15 @@ function ProjectResultCard({ project }: { project: SearchProjectResult }) {
             </div>
           )}
         </div>
-        <div className="flex h-full flex-col p-4">
+        <div className="flex flex-col p-4">
           <div className="mb-2 flex items-center justify-between">
             <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                isFree
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${isFree
                   ? "bg-green-100 text-green-600"
                   : isPaid
-                  ? "bg-orange-100 text-orange-600"
-                  : "bg-zinc-100 text-zinc-400"
-              }`}
+                    ? "bg-orange-100 text-orange-600"
+                    : "bg-zinc-100 text-zinc-400"
+                }`}
             >
               {priceLabel}
             </span>
@@ -501,15 +498,20 @@ function ProjectResultCard({ project }: { project: SearchProjectResult }) {
             <span>•</span>
             <span>{project.period}</span>
           </div>
-          <div className="mt-auto flex flex-wrap gap-1">
-            {project.failure_category?.slice(0, 3).map((category) => (
-              <span
-                key={category}
-                className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
-              >
-                #{category}
-              </span>
-            ))}
+          {/* Tags Section */}
+          <div className="flex flex-wrap gap-1 mt-2">
+            {project.failure_category && project.failure_category.length > 0 ? (
+              project.failure_category.slice(0, 3).map((category) => (
+                <span
+                  key={category}
+                  className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold text-zinc-600"
+                >
+                  #{category}
+                </span>
+              ))
+            ) : (
+              <span className="text-[10px] text-zinc-400">태그 없음</span>
+            )}
           </div>
         </div>
       </Link>
