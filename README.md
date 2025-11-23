@@ -3,7 +3,7 @@
 > **X-THON 2025 Team 11**  
 > 실패를 딛고 성장하는 개발자들을 위한 회고 공유 플랫폼, **Cistus**의 프론트엔드 레포지토리입니다.
 
-# 프론트엔드 배포 URL : ![배포 URL](https://cistus.site)
+# 프론트엔드 배포 URL : ![배포 URL](https://www.cistus.site)
 # 프론트엔드 배포 레포지토리 : ![배포 레포지토리](https://github.com/yee2know/BACKSTEP_FE)
 ## Organization에 있는 Frontend에 deployment limit이 제한되어, 현재 최신 버전의 링크는 배포 URL에, 레포지토리로 배포하였습니다.
 
